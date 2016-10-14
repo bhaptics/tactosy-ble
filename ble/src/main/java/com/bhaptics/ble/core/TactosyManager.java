@@ -12,6 +12,7 @@ import android.os.Messenger;
 import android.os.RemoteException;
 import android.util.Log;
 
+import com.bhaptics.ble.util.LogUtils;
 import com.bhaptics.ble.util.ReadyQueue;
 import com.bhaptics.ble.util.Constants;
 import com.bhaptics.ble.model.Device;
@@ -25,51 +26,44 @@ import java.util.UUID;
 
 import static com.bhaptics.ble.util.Constants.KEY_ADDR;
 
-public class TactosyManager implements ResponseHandler.ScanCallbackInner {
+public class TactosyManager implements ClientHandler.ScanCallbackInner {
 
-    // Static variables. tag string, static instance.
-    private static final String TAG = TactosyManager.class.getSimpleName();
+    private static final String TAG = LogUtils.makeLogTag(TactosyManager.class);
 
-    private static TactosyManager instance = null;
+    private static TactosyManager sInstance = null;
 
-    // Constructors and Factory methods.
-    /**
-     * Singleton getter method.
-     * NOTE This method should be called after instantiation of singleton instance.
-     * @see {@link #instantiate(Context)}
-     *
-     * @return TactosyManager instance.
-     */
     public static TactosyManager getInstance() {
-        assert instance != null;
-        return instance;
-    }
-
-    /**
-     * Instantiates TactosyManager's singleton instance and return it.
-     * This should be called in firstly launched activity, which can have singleton as member.
-     *
-     * @param context Context of firstly launched activity.
-     * @return TactosyManager instance.
-     */
-    public static TactosyManager instantiate(Context context) {
-        if (instance == null) {
-            instance = new TactosyManager(context);
+        if (sInstance == null) {
+            sInstance = new TactosyManager();
         }
 
-        return instance;
+        return sInstance;
     }
+
+    private Messenger mService = null;
+
+    /**
+     * Response handler to handle reponses from {@link TactosyBLEService}.
+     * @see {@link ClientHandler}
+     */
+    private ClientHandler mClientHandler;
+
+    private ReadyQueue mReadyQ = new ReadyQueue();
+
+    private ArrayList<ScanCallback> mScanCallbacks = new ArrayList<>();
+
+    /**
+     * Mapping for `address`:`{@link Device}`
+     */
+    private Map<String, Device> mBluetoothDeviceItemMap;
 
     /**
      * TactosyManager's constructor.
      * This is private because only singleton is used for this class.
-     *
-     * @param _context
      */
-    public TactosyManager(Context _context) {
-        mContext = _context;
+    private TactosyManager() {
         mBluetoothDeviceItemMap = new HashMap<>();
-        mResponseHandler = new ResponseHandler(this);
+        mClientHandler = new ClientHandler(this);
 
         addConnectCallback(new ConnectCallback() {
             @Override
@@ -124,7 +118,7 @@ public class TactosyManager implements ResponseHandler.ScanCallbackInner {
      */
     public interface ScanCallback {
         /**
-         * Called when {@link BluetoothLeService} sends a scan result.
+         * Called when {@link TactosyBLEService} sends a scan result.
          *
          * @param device Scanned results as {@link Device} object.
          */
@@ -198,25 +192,6 @@ public class TactosyManager implements ResponseHandler.ScanCallbackInner {
         void onReady();
     }
 
-    // Member variables.
-    private Context mContext;
-    private Messenger mService = null;
-
-    /**
-     * Response handler to handle reponses from {@link BluetoothLeService}.
-     * @see {@link ResponseHandler}
-     */
-    private ResponseHandler mResponseHandler;
-
-    private ReadyQueue mReadyQ = new ReadyQueue();
-
-    private ArrayList<ScanCallback> mScanCallbacks = new ArrayList<>();
-
-    /**
-     * Mapping for `address`:`{@link Device}`
-     */
-    private Map<String, Device> mBluetoothDeviceItemMap;
-
     /**
      * Service connection for binding & inter-communicating.
      * @see <a href=https://developer.android.com/guide/components/bound-services.html?hl=ko>this</a>
@@ -229,7 +204,7 @@ public class TactosyManager implements ResponseHandler.ScanCallbackInner {
 
             Message msg = new Message();
             msg.what = Constants.MESSAGE_REPLY;
-            msg.replyTo = new Messenger(mResponseHandler);
+            msg.replyTo = new Messenger(mClientHandler);
 
             sendMessageSafe(msg);
             mReadyQ.notifyReady();
@@ -246,10 +221,10 @@ public class TactosyManager implements ResponseHandler.ScanCallbackInner {
         return mReadyQ.isReady();
     }
 
-    public void bindService() {
+    public void bindService(Context context) {
         Intent intent = new Intent();
-        intent.setComponent(new ComponentName("com.bhaptics.tactosy", "com.bhaptics.ble.core.BluetoothLeService"));
-        if (!mContext.bindService(intent,
+        intent.setComponent(new ComponentName("com.bhaptics.tactosy", "com.bhaptics.ble.core.TactosyBLEService"));
+        if (!context.bindService(intent,
                 mConnection,
                             0 /*Context.BIND_IMPORTANT*/)) {
             Log.e(TAG, "Cannot connect to mService");
@@ -258,38 +233,24 @@ public class TactosyManager implements ResponseHandler.ScanCallbackInner {
         }
     }
 
-    public void unbindService() {
+    public void unbindService(Context context) {
         Log.e(TAG, "unbindService");
-        mContext.unbindService(mConnection);
+        context.unbindService(mConnection);
     }
 
-    /**
-     * Send message to {@link BluetoothLeService} for start scanning.
-     */
     public void scan() {
-        Log.i(TAG, "scan start");
-
-        Message msg = new Message();
-        msg.what = Constants.MESSAGE_SCAN;
-        sendMessageSafe(msg);
     }
 
-    /**
-     * Send message to {@link BluetoothLeService} for stop scanning.
-     */
     public void stopScan() {
-        Message msg = new Message();
-        msg.what = Constants.MESSAGE_STOPSCAN;
-        sendMessageSafe(msg);
     }
 
     @Override
     public void onTactosyScan(BluetoothDevice device, int type, int flag) {
         if (!mBluetoothDeviceItemMap.containsKey(device.getAddress()) && type == Device.DEVICETYPE_TACTOSY) {
             Device tDevice = new Device(device.getAddress(), device.getName(), type);
-            mBluetoothDeviceItemMap.put(tDevice.getMacAddress(), tDevice);
+            mBluetoothDeviceItemMap.put(tDevice.getAddress(), tDevice);
 
-            if ((flag & ResponseHandler.EXTRA_FLAG_CONNECTED) != 0) {
+            if ((flag & ClientHandler.EXTRA_FLAG_CONNECTED) != 0) {
                 tDevice.setConnected(true);
             }
         }
@@ -322,7 +283,7 @@ public class TactosyManager implements ResponseHandler.ScanCallbackInner {
     }
 
     /**
-     * Send message to {@link BluetoothLeService} for connecting device.
+     * Send message to {@link TactosyBLEService} for connecting device.
      *
      * @param tDevice {@link Device} scanned but not connected.
      * @return true if message is sent successfully.
@@ -333,7 +294,7 @@ public class TactosyManager implements ResponseHandler.ScanCallbackInner {
             Bundle data = new Bundle();
 
             msg.what = Constants.MESSAGE_CONNECT;
-            data.putString(KEY_ADDR, tDevice.getMacAddress());
+            data.putString(KEY_ADDR, tDevice.getAddress());
             msg.setData(data);
 
             sendMessageSafe(msg);
@@ -344,7 +305,7 @@ public class TactosyManager implements ResponseHandler.ScanCallbackInner {
     }
 
     /**
-     * Send message to {@link BluetoothLeService} for disconnecting device.
+     * Send message to {@link TactosyBLEService} for disconnecting device.
      *
      * @param tDevice
      */
@@ -355,7 +316,7 @@ public class TactosyManager implements ResponseHandler.ScanCallbackInner {
 
             msg.what = Constants.MESSAGE_DISCONNECT;
 
-            data.putString(KEY_ADDR, tDevice.getMacAddress());
+            data.putString(KEY_ADDR, tDevice.getAddress());
             msg.setData(data);
 
             sendMessageSafe(msg);
@@ -488,11 +449,11 @@ public class TactosyManager implements ResponseHandler.ScanCallbackInner {
     }
 
     public void addConnectCallback(ConnectCallback callback) {
-        mResponseHandler.addConnectCallback(callback);
+        mClientHandler.addConnectCallback(callback);
     }
 
     public void addDataCallback(DataCallback callback) {
-        mResponseHandler.addDataCallback(callback);
+        mClientHandler.addDataCallback(callback);
     }
 
     public void addOnReadyListener(OnReadyListener listener) {

@@ -28,7 +28,7 @@ public class ScanRecordParser {
 
             byte[] data = Arrays.copyOfRange(scanRecord, index + 1, index + length);
 
-            if(data != null && data.length > 0) {
+            if (data.length > 0) {
                 StringBuilder hex = new StringBuilder(data.length * 2);
                 // the data appears to be there backwards
                 for (int bb = data.length- 1; bb >= 0; bb--) {

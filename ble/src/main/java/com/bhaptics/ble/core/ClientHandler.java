@@ -8,30 +8,27 @@ import android.os.Message;
 import android.os.Parcelable;
 
 import com.bhaptics.ble.util.Constants;
-import com.bhaptics.ble.model.Device;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-class ResponseHandler extends Handler {
+public class ClientHandler extends Handler {
     private static final int TACTOSY_APPEARANCE = 508;
 
     public static final int EXTRA_FLAG_CONNECTED = 1;
 
     private ArrayList<TactosyManager.ConnectCallback> mConnectCallbacks;
     private ArrayList<TactosyManager.DataCallback> mDataCallbacks;
-    private ScanCallbackInner mScanCallback;
 
     interface ScanCallbackInner {
         void onTactosyScan(BluetoothDevice device, int type, int flags);
     }
 
-    ResponseHandler(ScanCallbackInner scanCallback) {
+    ClientHandler(ScanCallbackInner scanCallback) {
         super();
         mConnectCallbacks = new ArrayList<>();
         mDataCallbacks = new ArrayList<>();
-        mScanCallback = scanCallback;
     }
 
     private static List<Parcelable> safe(List<Parcelable> list) {
@@ -49,19 +46,12 @@ class ResponseHandler extends Handler {
                 }
                 for (Parcelable p: safe(data.getParcelableArrayList(Constants.KEY_CONNECTED))) {
                     BluetoothDevice device = (BluetoothDevice) p;
-                    mScanCallback.onTactosyScan(device, Device.DEVICETYPE_TACTOSY, EXTRA_FLAG_CONNECTED);
 
                     for (TactosyManager.ConnectCallback callback: mConnectCallbacks) {
                         callback.onConnect(device.getAddress());
                     }
                 }
 
-                break;
-            case Constants.MESSAGE_SCAN_RESPONSE:
-                BluetoothDevice device = (BluetoothDevice) msg.obj;
-                int type = msg.arg1 == TACTOSY_APPEARANCE ? Device.DEVICETYPE_TACTOSY :
-                                                            Device.DEVICETYPE_OTHER;
-                mScanCallback.onTactosyScan(device, type, 0);
                 break;
             case Constants.MESSAGE_CONNECT_RESPONSE:
                 int status = msg.arg1;
@@ -100,7 +90,6 @@ class ResponseHandler extends Handler {
                     callback.onWrite(address, uuid, status);
                 }
                 break;
-
             case Constants.MESSAGE_READ_ERROR:
                 int errCode = Constants.MESSAGE_READ_ERROR;
                 data = msg.getData();
@@ -110,6 +99,7 @@ class ResponseHandler extends Handler {
                 for (TactosyManager.DataCallback callback: mDataCallbacks) {
                     callback.onDataError(address, charId, errCode);
                 }
+                break;
             case Constants.MESSAGE_WRITE_ERROR:
                 errCode = Constants.MESSAGE_WRITE_ERROR;
                 data = msg.getData();

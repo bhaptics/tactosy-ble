@@ -5,13 +5,13 @@ public class Device {
     public static final int DEVICETYPE_OTHER = 1;
 
     private boolean mConnected;
-    private String mMacAddress;
+    private String mAddress;
     private String mDeviceName;
     private int mBattery;
     private int mType;
 
     public Device(String macAddress, String deviceName, int type) {
-        mMacAddress = macAddress;
+        mAddress = macAddress;
         mDeviceName = deviceName;
         mConnected = false;
         mBattery = -1;
@@ -26,8 +26,8 @@ public class Device {
         return mConnected;
     }
 
-    public String getMacAddress() {
-        return mMacAddress;
+    public String getAddress() {
+        return mAddress;
     }
 
     public String getDeviceName() {
@@ -54,7 +54,7 @@ public class Device {
     public String toString() {
         String connected = mConnected ? "connected" : "disconnected";
         return "Tactosy {" +
-                "addr: " + mMacAddress + ", " +
+                "addr: " + mAddress + ", " +
                 "name: " + mDeviceName + ", " +
                 "battery: " + mBattery + "% remains, " +
                 connected + "}";
