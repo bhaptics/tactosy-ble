@@ -41,7 +41,8 @@ public class TactosyClient extends BaseClient {
     }
 
     /**
-     * Mapping for `address`:`{@link Device}`
+     * Devices list selectable by address.
+     * This is filled when devices are scanned. (after {@link TactosyClient#scan})
      */
     private Map<String, Device> mDevices;
 
@@ -107,7 +108,7 @@ public class TactosyClient extends BaseClient {
          *
          * @param device Scanned results as {@link Device} object.
          */
-        void onTactosyScan(Collection<Device> device);
+        void onScan(Collection<Device> device);
     }
 
     /**
@@ -187,23 +188,23 @@ public class TactosyClient extends BaseClient {
         return result;
     }
 
-    public Device getBleDeviceItem(String address) {
+    public Device getDevice(String address) {
         return mDevices.get(address);
     }
 
     /**
      * Send message to {@link TactosyBLEService} for connecting device.
      *
-     * @param tDevice {@link Device} scanned but not connected.
+     * @param device {@link Device} scanned but not connected.
      * @return true if message is sent successfully.
      */
-    public boolean connect(Device tDevice) {
-        if (tDevice != null) {
+    public boolean connect(Device device) {
+        if (device != null) {
             Message msg = new Message();
             Bundle data = new Bundle();
 
             msg.what = Constants.MESSAGE_CONNECT;
-            data.putString(Constants.KEY_ADDR, tDevice.getAddress());
+            data.putString(Constants.KEY_ADDR, device.getAddress());
             msg.setData(data);
 
             try {
@@ -220,16 +221,16 @@ public class TactosyClient extends BaseClient {
     /**
      * Send message to {@link TactosyBLEService} for disconnecting device.
      *
-     * @param tDevice
+     * @param device
      */
-    public void disconnect(Device tDevice) {
-        if (tDevice != null) {
+    public void disconnect(Device device) {
+        if (device != null) {
             Message msg = new Message();
             Bundle data = new Bundle();
 
             msg.what = Constants.MESSAGE_DISCONNECT;
 
-            data.putString(Constants.KEY_ADDR, tDevice.getAddress());
+            data.putString(Constants.KEY_ADDR, device.getAddress());
             msg.setData(data);
 
             try {
