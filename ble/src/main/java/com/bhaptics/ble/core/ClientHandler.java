@@ -14,18 +14,11 @@ import java.util.List;
 import java.util.UUID;
 
 public class ClientHandler extends Handler {
-    private static final int TACTOSY_APPEARANCE = 508;
 
-    public static final int EXTRA_FLAG_CONNECTED = 1;
+    private ArrayList<TactosyClient.ConnectCallback> mConnectCallbacks;
+    private ArrayList<TactosyClient.DataCallback> mDataCallbacks;
 
-    private ArrayList<TactosyManager.ConnectCallback> mConnectCallbacks;
-    private ArrayList<TactosyManager.DataCallback> mDataCallbacks;
-
-    interface ScanCallbackInner {
-        void onTactosyScan(BluetoothDevice device, int type, int flags);
-    }
-
-    ClientHandler(ScanCallbackInner scanCallback) {
+    ClientHandler() {
         super();
         mConnectCallbacks = new ArrayList<>();
         mDataCallbacks = new ArrayList<>();
@@ -39,87 +32,102 @@ public class ClientHandler extends Handler {
     public void handleMessage(Message msg) {
         switch (msg.what) {
             case Constants.MESSAGE_REPLY:
-                Bundle data = msg.getData();
-
-                if (data == null) {
-                    break;
-                }
-                for (Parcelable p: safe(data.getParcelableArrayList(Constants.KEY_CONNECTED))) {
-                    BluetoothDevice device = (BluetoothDevice) p;
-
-                    for (TactosyManager.ConnectCallback callback: mConnectCallbacks) {
-                        callback.onConnect(device.getAddress());
-                    }
-                }
-
+                replyToService(msg);
                 break;
             case Constants.MESSAGE_CONNECT_RESPONSE:
-                int status = msg.arg1;
-                data = msg.getData();
-                String address = data.getString(Constants.KEY_ADDR);
-
-                for (TactosyManager.ConnectCallback callback: mConnectCallbacks) {
-                    if (status == BluetoothProfile.STATE_CONNECTED) {
-                        callback.onConnect(address);
-                    } else if (status == BluetoothProfile.STATE_DISCONNECTED) {
-                        callback.onDisconnect(address);
-                    } else {
-                        callback.onConnectionError(address);
-                    }
-                }
-
+                onConnectResponse(msg);
                 break;
             case Constants.MESSAGE_READ_SUCCESS:
-                status = msg.arg1;
-                data = msg.getData();
-                address = data.getString(Constants.KEY_ADDR);
-                UUID uuid = UUID.fromString(data.getString(Constants.KEY_CHAR_ID));
-                byte[] bytes = data.getByteArray(Constants.KEY_VALUES);
-
-                for (TactosyManager.DataCallback callback: mDataCallbacks) {
-                    callback.onRead(address, uuid, bytes, status);
-                }
+                onRead(msg);
                 break;
             case Constants.MESSAGE_WRITE_SUCCESS:
-                status = msg.arg1;
-                data = msg.getData();
-                address = data.getString(Constants.KEY_ADDR);
-                uuid = UUID.fromString(data.getString(Constants.KEY_CHAR_ID));
-
-                for (TactosyManager.DataCallback callback: mDataCallbacks) {
-                    callback.onWrite(address, uuid, status);
-                }
+                onWrite(msg);
                 break;
             case Constants.MESSAGE_READ_ERROR:
-                int errCode = Constants.MESSAGE_READ_ERROR;
-                data = msg.getData();
-                address = data.getString(Constants.KEY_ADDR);
-                String charId = data.getString(Constants.KEY_CHAR_ID);
-
-                for (TactosyManager.DataCallback callback: mDataCallbacks) {
-                    callback.onDataError(address, charId, errCode);
-                }
-                break;
             case Constants.MESSAGE_WRITE_ERROR:
-                errCode = Constants.MESSAGE_WRITE_ERROR;
-                data = msg.getData();
-                address = data.getString(Constants.KEY_ADDR);
-                charId = data.getString(Constants.KEY_CHAR_ID);
-
-                for (TactosyManager.DataCallback callback: mDataCallbacks) {
-                    callback.onDataError(address, charId, errCode);
-                }
+                onError(msg);
                 break;
             default:
                 break;
         }
     }
 
-    void addConnectCallback(TactosyManager.ConnectCallback callback) {
+    private void replyToService(Message msg) {
+        Bundle data = msg.getData();
+
+        if (data == null) {
+            return;
+        }
+
+        for (Parcelable p : safe(data.getParcelableArrayList(Constants.KEY_CONNECTED))) {
+            BluetoothDevice device = (BluetoothDevice) p;
+
+            for (TactosyClient.ConnectCallback callback : mConnectCallbacks) {
+                callback.onConnect(device.getAddress());
+            }
+        }
+    }
+
+    private void onConnectResponse(Message msg) {
+        Bundle data = msg.getData();
+
+        int status = msg.arg1;
+        String address = data.getString(Constants.KEY_ADDR);
+
+        for (TactosyClient.ConnectCallback callback : mConnectCallbacks) {
+            if (status == BluetoothProfile.STATE_CONNECTED) {
+                callback.onConnect(address);
+            } else if (status == BluetoothProfile.STATE_DISCONNECTED) {
+                callback.onDisconnect(address);
+            } else {
+                callback.onConnectionError(address);
+            }
+        }
+    }
+
+    private void onRead(Message msg) {
+        Bundle data = msg.getData();
+
+        int status = msg.arg1;
+        String address = data.getString(Constants.KEY_ADDR);
+        UUID uuid = UUID.fromString(data.getString(Constants.KEY_CHAR_ID));
+
+        byte[] bytes = data.getByteArray(Constants.KEY_VALUES);
+
+        for (TactosyClient.DataCallback callback : mDataCallbacks) {
+            callback.onRead(address, uuid, bytes, status);
+        }
+    }
+
+    private void onWrite(Message msg) {
+        Bundle data = msg.getData();
+
+        int status = msg.arg1;
+        String address = data.getString(Constants.KEY_ADDR);
+        UUID uuid = UUID.fromString(data.getString(Constants.KEY_CHAR_ID));
+
+        for (TactosyClient.DataCallback callback : mDataCallbacks) {
+            callback.onWrite(address, uuid, status);
+        }
+    }
+
+    private void onError(Message msg) {
+        Bundle data = msg.getData();
+
+        int errCode = Constants.MESSAGE_WRITE_ERROR;
+        String address = data.getString(Constants.KEY_ADDR);
+        String charId = data.getString(Constants.KEY_CHAR_ID);
+
+        for (TactosyClient.DataCallback callback : mDataCallbacks) {
+            callback.onDataError(address, charId, errCode);
+        }
+    }
+
+    void addConnectCallback(TactosyClient.ConnectCallback callback) {
         mConnectCallbacks.add(callback);
     }
 
-    void addDataCallback(TactosyManager.DataCallback callback) {
+    void addDataCallback(TactosyClient.DataCallback callback) {
         mDataCallbacks.add(callback);
     }
 }

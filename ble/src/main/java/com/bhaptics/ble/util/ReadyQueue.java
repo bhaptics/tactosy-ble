@@ -1,8 +1,8 @@
 package com.bhaptics.ble.util;
 
-import java.util.ArrayList;
+import com.bhaptics.ble.core.BaseClient.OnReadyListener;
 
-import com.bhaptics.ble.core.TactosyManager.OnReadyListener;
+import java.util.ArrayList;
 
 public class ReadyQueue extends ArrayList<OnReadyListener> {
     private boolean mReady = false;

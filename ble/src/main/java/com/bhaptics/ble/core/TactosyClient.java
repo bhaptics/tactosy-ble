@@ -1,19 +1,10 @@
 package com.bhaptics.ble.core;
 
-import android.bluetooth.BluetoothDevice;
-import android.content.ComponentName;
-import android.content.Context;
-import android.content.Intent;
-import android.content.ServiceConnection;
 import android.os.Bundle;
-import android.os.IBinder;
 import android.os.Message;
-import android.os.Messenger;
 import android.os.RemoteException;
-import android.util.Log;
 
 import com.bhaptics.ble.util.LogUtils;
-import com.bhaptics.ble.util.ReadyQueue;
 import com.bhaptics.ble.util.Constants;
 import com.bhaptics.ble.model.Device;
 
@@ -24,23 +15,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import static com.bhaptics.ble.util.Constants.KEY_ADDR;
+public class TactosyClient extends BaseClient {
 
-public class TactosyManager implements ClientHandler.ScanCallbackInner {
+    private static final String TAG = LogUtils.makeLogTag(TactosyClient.class);
 
-    private static final String TAG = LogUtils.makeLogTag(TactosyManager.class);
+    private static TactosyClient sInstance = null;
 
-    private static TactosyManager sInstance = null;
-
-    public static TactosyManager getInstance() {
+    public static TactosyClient getInstance() {
         if (sInstance == null) {
-            sInstance = new TactosyManager();
+            sInstance = new TactosyClient();
         }
 
         return sInstance;
     }
-
-    private Messenger mService = null;
 
     /**
      * Response handler to handle reponses from {@link TactosyBLEService}.
@@ -48,39 +35,37 @@ public class TactosyManager implements ClientHandler.ScanCallbackInner {
      */
     private ClientHandler mClientHandler;
 
-    private ReadyQueue mReadyQ = new ReadyQueue();
-
-    private ArrayList<ScanCallback> mScanCallbacks = new ArrayList<>();
+    @Override
+    protected ClientHandler getClientHandler() {
+        return mClientHandler;
+    }
 
     /**
      * Mapping for `address`:`{@link Device}`
      */
-    private Map<String, Device> mBluetoothDeviceItemMap;
+    private Map<String, Device> mDevices;
 
     /**
-     * TactosyManager's constructor.
+     * TactosyClient's constructor.
      * This is private because only singleton is used for this class.
      */
-    private TactosyManager() {
-        mBluetoothDeviceItemMap = new HashMap<>();
-        mClientHandler = new ClientHandler(this);
+    private TactosyClient() {
+        super();
+        mDevices = new HashMap<>();
+        mClientHandler = getClientHandler();
 
         addConnectCallback(new ConnectCallback() {
             @Override
             public void onConnect(String addr) {
-                if (mBluetoothDeviceItemMap.containsKey(addr)) {
+                if (mDevices.containsKey(addr)) {
                     return;
                 }
 
                 Device device = new Device(addr, "", Device.DEVICETYPE_TACTOSY);
                 device.setConnected(true);
-                mBluetoothDeviceItemMap.put(addr, device);
+                mDevices.put(addr, device);
 
                 readName(addr);
-
-                for (ScanCallback callback: mScanCallbacks) {
-                    callback.onTactosyScan(mBluetoothDeviceItemMap.values());
-                }
             }
 
             @Override
@@ -97,7 +82,7 @@ public class TactosyManager implements ClientHandler.ScanCallbackInner {
                     return;
                 }
 
-                Device target = mBluetoothDeviceItemMap.get(address);
+                Device target = mDevices.get(address);
 
                 if (target != null && target.getDeviceName().isEmpty()) {
                     target.setDeviceName(new String(data));
@@ -161,7 +146,6 @@ public class TactosyManager implements ClientHandler.ScanCallbackInner {
     public interface DataCallback {
         /**
          * Called after read request processed successfully on device.
-         * @see {@link #sendMessageSafe(Message)}.
          *
          * @param address MAC address of device to read data.
          * @param charUUID Characteristic UUID to read data.
@@ -172,7 +156,6 @@ public class TactosyManager implements ClientHandler.ScanCallbackInner {
 
         /**
          * Called after write request processed successfully on device.
-         * @see {@link #sendMessageSafe(Message)}
          *
          * @param address MAC address of device to write data.
          * @param charUUID Characteristic UUID to write data.
@@ -188,89 +171,15 @@ public class TactosyManager implements ClientHandler.ScanCallbackInner {
         void onDataError(String address, String charId, int errCode);
     }
 
-    public interface OnReadyListener {
-        void onReady();
-    }
-
-    /**
-     * Service connection for binding & inter-communicating.
-     * @see <a href=https://developer.android.com/guide/components/bound-services.html?hl=ko>this</a>
-     */
-    private ServiceConnection mConnection = new ServiceConnection() {
-        @Override
-        public void onServiceConnected(ComponentName name, IBinder _service) {
-            Log.e(TAG, "onServiceConnected: " + name);
-            mService = new Messenger(_service);
-
-            Message msg = new Message();
-            msg.what = Constants.MESSAGE_REPLY;
-            msg.replyTo = new Messenger(mClientHandler);
-
-            sendMessageSafe(msg);
-            mReadyQ.notifyReady();
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName name) {
-            Log.e(TAG, "Service disconnected suddenly");
-            mService = null;
-        }
-    };
-
-    public boolean isReady() {
-        return mReadyQ.isReady();
-    }
-
-    public void bindService(Context context) {
-        Intent intent = new Intent();
-        intent.setComponent(new ComponentName("com.bhaptics.tactosy", "com.bhaptics.ble.core.TactosyBLEService"));
-        if (!context.bindService(intent,
-                mConnection,
-                            0 /*Context.BIND_IMPORTANT*/)) {
-            Log.e(TAG, "Cannot connect to mService");
-        } else {
-            Log.e(TAG, "Connected");
-        }
-    }
-
-    public void unbindService(Context context) {
-        Log.e(TAG, "unbindService");
-        context.unbindService(mConnection);
-    }
-
     public void scan() {
     }
 
     public void stopScan() {
     }
 
-    @Override
-    public void onTactosyScan(BluetoothDevice device, int type, int flag) {
-        if (!mBluetoothDeviceItemMap.containsKey(device.getAddress()) && type == Device.DEVICETYPE_TACTOSY) {
-            Device tDevice = new Device(device.getAddress(), device.getName(), type);
-            mBluetoothDeviceItemMap.put(tDevice.getAddress(), tDevice);
-
-            if ((flag & ClientHandler.EXTRA_FLAG_CONNECTED) != 0) {
-                tDevice.setConnected(true);
-            }
-        }
-
-        for (ScanCallback callback: mScanCallbacks) {
-            callback.onTactosyScan(mBluetoothDeviceItemMap.values());
-        }
-    }
-
-    private void sendMessageSafe(Message msg) {
-        try {
-            mService.send(msg);
-        } catch (RemoteException e) {
-            Log.e(TAG, "sendMessageSafe: ", e);
-        }
-    }
-
     public List<Device> getConnectedDevices() {
         List<Device> result = new ArrayList<>();
-        for (Device tactosyDevice : mBluetoothDeviceItemMap.values()) {
+        for (Device tactosyDevice : mDevices.values()) {
             if (tactosyDevice.getConnected()) {
                 result.add(tactosyDevice);
             }
@@ -279,7 +188,7 @@ public class TactosyManager implements ClientHandler.ScanCallbackInner {
     }
 
     public Device getBleDeviceItem(String address) {
-        return mBluetoothDeviceItemMap.get(address);
+        return mDevices.get(address);
     }
 
     /**
@@ -294,10 +203,14 @@ public class TactosyManager implements ClientHandler.ScanCallbackInner {
             Bundle data = new Bundle();
 
             msg.what = Constants.MESSAGE_CONNECT;
-            data.putString(KEY_ADDR, tDevice.getAddress());
+            data.putString(Constants.KEY_ADDR, tDevice.getAddress());
             msg.setData(data);
 
-            sendMessageSafe(msg);
+            try {
+                getService().send(msg);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
 
             return true;
         }
@@ -316,10 +229,14 @@ public class TactosyManager implements ClientHandler.ScanCallbackInner {
 
             msg.what = Constants.MESSAGE_DISCONNECT;
 
-            data.putString(KEY_ADDR, tDevice.getAddress());
+            data.putString(Constants.KEY_ADDR, tDevice.getAddress());
             msg.setData(data);
 
-            sendMessageSafe(msg);
+            try {
+                getService().send(msg);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -334,12 +251,16 @@ public class TactosyManager implements ClientHandler.ScanCallbackInner {
         data.putString(Constants.KEY_SERVICE_ID, Constants.MOTOR_SERVICE.toString());
         data.putString(Constants.KEY_CHAR_ID, charUUID.toString());
         data.putByteArray(Constants.KEY_VALUES, values);
-        data.putString(KEY_ADDR, addr);
+        data.putString(Constants.KEY_ADDR, addr);
 
         msg.what = Constants.MESSAGE_WRITE;
-
         msg.setData(data);
-        sendMessageSafe(msg);
+
+        try {
+            getService().send(msg);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
     }
 
     public void setMotorConfig(String addr, byte[] raw_data) {
@@ -348,13 +269,17 @@ public class TactosyManager implements ClientHandler.ScanCallbackInner {
 
         data.putString(Constants.KEY_SERVICE_ID, Constants.MOTOR_SERVICE.toString());
         data.putString(Constants.KEY_CHAR_ID, Constants.MOTOR_CONFIG_CUST.toString());
-        data.putString(KEY_ADDR, addr);
+        data.putString(Constants.KEY_ADDR, addr);
         data.putByteArray(Constants.KEY_VALUES, raw_data);
 
         msg.what = Constants.MESSAGE_WRITE;
 
         msg.setData(data);
-        sendMessageSafe(msg);
+        try {
+            getService().send(msg);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
     }
 
     public void getMotorConfig(String addr) {
@@ -363,12 +288,16 @@ public class TactosyManager implements ClientHandler.ScanCallbackInner {
 
         data.putString(Constants.KEY_SERVICE_ID, Constants.MOTOR_SERVICE.toString());
         data.putString(Constants.KEY_CHAR_ID, Constants.MOTOR_CONFIG_CUST.toString());
-        data.putString(KEY_ADDR, addr);
+        data.putString(Constants.KEY_ADDR, addr);
 
         msg.what = Constants.MESSAGE_READ;
         msg.setData(data);
 
-        sendMessageSafe(msg);
+        try {
+            getService().send(msg);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
     }
 
     public void readBattery(String addr) {
@@ -377,12 +306,16 @@ public class TactosyManager implements ClientHandler.ScanCallbackInner {
 
         data.putString(Constants.KEY_SERVICE_ID, Constants.BATTERY_SERVICE.toString());
         data.putString(Constants.KEY_CHAR_ID, Constants.BATTERY_CHAR.toString());
-        data.putString(KEY_ADDR, addr);
+        data.putString(Constants.KEY_ADDR, addr);
 
         msg.what = Constants.MESSAGE_READ;
 
         msg.setData(data);
-        sendMessageSafe(msg);
+        try {
+            getService().send(msg);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
     }
 
     public void readName(String addr) {
@@ -391,12 +324,16 @@ public class TactosyManager implements ClientHandler.ScanCallbackInner {
 
         data.putString(Constants.KEY_SERVICE_ID, Constants.MOTOR_SERVICE.toString());
         data.putString(Constants.KEY_CHAR_ID, Constants.MOTOR_DEVICE_NAME.toString());
-        data.putString(KEY_ADDR, addr);
+        data.putString(Constants.KEY_ADDR, addr);
 
         msg.what = Constants.MESSAGE_READ;
 
         msg.setData(data);
-        sendMessageSafe(msg);
+        try {
+            getService().send(msg);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
     }
 
     public void setBatteryNotification(String addr) {
@@ -405,14 +342,18 @@ public class TactosyManager implements ClientHandler.ScanCallbackInner {
 
         data.putString(Constants.KEY_SERVICE_ID, Constants.BATTERY_SERVICE.toString());
         data.putString(Constants.KEY_CHAR_ID, Constants.BATTERY_CHAR.toString());
-        data.putString(KEY_ADDR, addr);
+        data.putString(Constants.KEY_ADDR, addr);
 
         data.putBoolean(Constants.KEY_VALUES, true);
 
         msg.what = Constants.MESSAGE_SET_NOTIFICATION;
 
         msg.setData(data);
-        sendMessageSafe(msg);
+        try {
+            getService().send(msg);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
     }
 
     public void readVersion(String addr) {
@@ -421,12 +362,16 @@ public class TactosyManager implements ClientHandler.ScanCallbackInner {
 
         data.putString(Constants.KEY_SERVICE_ID, Constants.MOTOR_SERVICE.toString());
         data.putString(Constants.KEY_CHAR_ID, Constants.MOTOR_DEVICE_VER.toString());
-        data.putString(KEY_ADDR, addr);
+        data.putString(Constants.KEY_ADDR, addr);
 
         msg.what = Constants.MESSAGE_READ;
 
         msg.setData(data);
-        sendMessageSafe(msg);
+        try {
+            getService().send(msg);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
     }
 
     public void setDeviceName(String addr, String deviceName) {
@@ -435,17 +380,17 @@ public class TactosyManager implements ClientHandler.ScanCallbackInner {
 
         data.putString(Constants.KEY_SERVICE_ID, Constants.MOTOR_SERVICE.toString());
         data.putString(Constants.KEY_CHAR_ID, Constants.MOTOR_DEVICE_NAME.toString());
-        data.putString(KEY_ADDR, addr);
+        data.putString(Constants.KEY_ADDR, addr);
         data.putByteArray(Constants.KEY_VALUES, deviceName.getBytes());
 
         msg.what = Constants.MESSAGE_WRITE;
 
         msg.setData(data);
-        sendMessageSafe(msg);
-    }
-
-    public void addScanCallback(ScanCallback callback) {
-        mScanCallbacks.add(callback);
+        try {
+            getService().send(msg);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
     }
 
     public void addConnectCallback(ConnectCallback callback) {
@@ -454,9 +399,5 @@ public class TactosyManager implements ClientHandler.ScanCallbackInner {
 
     public void addDataCallback(DataCallback callback) {
         mClientHandler.addDataCallback(callback);
-    }
-
-    public void addOnReadyListener(OnReadyListener listener) {
-        mReadyQ.put(listener);
     }
 }
