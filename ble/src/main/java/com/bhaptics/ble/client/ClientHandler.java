@@ -1,4 +1,4 @@
-package com.bhaptics.ble.core;
+package com.bhaptics.ble.client;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;

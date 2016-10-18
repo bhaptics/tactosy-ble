@@ -1,4 +1,4 @@
-package com.bhaptics.ble.core;
+package com.bhaptics.ble.service;
 
 import android.app.Service;
 import android.bluetooth.BluetoothAdapter;

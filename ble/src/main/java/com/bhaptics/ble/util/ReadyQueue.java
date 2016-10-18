@@ -1,6 +1,6 @@
 package com.bhaptics.ble.util;
 
-import com.bhaptics.ble.core.BaseClient.OnReadyListener;
+import com.bhaptics.ble.client.BaseClient.OnReadyListener;
 
 import java.util.ArrayList;
 

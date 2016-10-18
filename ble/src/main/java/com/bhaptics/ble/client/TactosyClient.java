@@ -1,12 +1,23 @@
-package com.bhaptics.ble.core;
+package com.bhaptics.ble.client;
 
+import android.annotation.TargetApi;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothManager;
+import android.bluetooth.le.BluetoothLeScanner;
+import android.bluetooth.le.ScanResult;
+import android.bluetooth.le.ScanSettings;
+import android.content.Context;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Message;
 import android.os.RemoteException;
 
+import com.bhaptics.ble.service.TactosyBLEService;
 import com.bhaptics.ble.util.LogUtils;
 import com.bhaptics.ble.util.Constants;
 import com.bhaptics.ble.model.Device;
+import com.bhaptics.ble.util.ScanRecordParser;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -19,11 +30,13 @@ public class TactosyClient extends BaseClient {
 
     private static final String TAG = LogUtils.makeLogTag(TactosyClient.class);
 
+    private static final int TACTOSY_APPEARANCE = 508;
+
     private static TactosyClient sInstance = null;
 
-    public static TactosyClient getInstance() {
+    public static TactosyClient getInstance(Context context) {
         if (sInstance == null) {
-            sInstance = new TactosyClient();
+            sInstance = new TactosyClient(context);
         }
 
         return sInstance;
@@ -34,6 +47,10 @@ public class TactosyClient extends BaseClient {
      * @see {@link ClientHandler}
      */
     private ClientHandler mClientHandler;
+
+    private BluetoothAdapter mBluetoothAdapter;
+
+    private ScanCallback mScanCallback;
 
     @Override
     protected ClientHandler getClientHandler() {
@@ -46,56 +63,55 @@ public class TactosyClient extends BaseClient {
      */
     private Map<String, Device> mDevices;
 
-    /**
-     * TactosyClient's constructor.
-     * This is private because only singleton is used for this class.
-     */
-    private TactosyClient() {
-        super();
-        mDevices = new HashMap<>();
-        mClientHandler = getClientHandler();
+    // This callback is just for backward compatibility,
+    // This should be deprecated.
+    @Deprecated
+    private BluetoothAdapter.LeScanCallback mOlderScanCallback = new BluetoothAdapter.LeScanCallback() {
+        @Override
+        public void onLeScan(BluetoothDevice device, int rssi, byte[] scanRecord) {
+            onDeviceScanned(device, rssi, scanRecord);
+        }
+    };
 
-        addConnectCallback(new ConnectCallback() {
-            @Override
-            public void onConnect(String addr) {
-                if (mDevices.containsKey(addr)) {
-                    return;
+    private android.bluetooth.le.ScanCallback mNewerScanCallback;
+
+    // NOTE To get backward compatibility, only devices above lollipop can use this callbacks,
+    // and to apply TargetApi annotation this getter function should be used.
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+    private android.bluetooth.le.ScanCallback getNewerScanCallback() {
+        if (mNewerScanCallback == null) {
+            mNewerScanCallback = new android.bluetooth.le.ScanCallback() {
+                @Override
+                public void onScanResult(int callbackType, ScanResult result) {
+                    if (callbackType == ScanSettings.CALLBACK_TYPE_MATCH_LOST) {
+                        return;
+                    }
+
+                    BluetoothDevice device = result.getDevice();
+                    int rssi = result.getRssi();
+                    byte[] scanRecord = result.getScanRecord().getBytes();
+
+                    onDeviceScanned(device, rssi, scanRecord);
                 }
+            };
+        }
 
-                Device device = new Device(addr, "", Device.DEVICETYPE_TACTOSY);
-                device.setConnected(true);
-                mDevices.put(addr, device);
+        return mNewerScanCallback;
+    }
 
-                readName(addr);
-            }
+    protected void onDeviceScanned(BluetoothDevice device, int rssi, byte[] scanRecord) {
+        if (mDevices.containsKey(device.getAddress())) {
+            return;
+        }
 
-            @Override
-            public void onDisconnect(String addr) {}
+        int appearance = ScanRecordParser.getAppearance(scanRecord);
 
-            @Override
-            public void onConnectionError(String addr) {}
-        });
+        int deviceType = appearance == TACTOSY_APPEARANCE ? Device.DEVICETYPE_TACTOSY :
+                Device.DEVICETYPE_OTHER;
 
-        addDataCallback(new DataCallback() {
-            @Override
-            public void onRead(String address, UUID charUUID, byte[] data, int status) {
-                if (data == null || !charUUID.equals(Constants.MOTOR_DEVICE_NAME)) {
-                    return;
-                }
+        mDevices.put(device.getAddress(), new Device(device.getAddress(), device.getName(), deviceType));
 
-                Device target = mDevices.get(address);
-
-                if (target != null && target.getDeviceName().isEmpty()) {
-                    target.setDeviceName(new String(data));
-                }
-            }
-
-            @Override
-            public void onWrite(String address, UUID charUUID, int status) {}
-
-            @Override
-            public void onDataError(String address, String charId, int errCode) {}
-        });
+        mScanCallback.onScan(mDevices.values());
     }
 
     /**
@@ -172,10 +188,81 @@ public class TactosyClient extends BaseClient {
         void onDataError(String address, String charId, int errCode);
     }
 
+    /**
+     * TactosyClient's constructor.
+     * This is private because only singleton is used for this class.
+     */
+    protected TactosyClient(Context context) {
+        super();
+        mDevices = new HashMap<>();
+        mClientHandler = getClientHandler();
+        BluetoothManager bluetoothManager =
+                (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
+        mBluetoothAdapter = bluetoothManager.getAdapter();
+
+        addConnectCallback(new ConnectCallback() {
+            @Override
+            public void onConnect(String addr) {
+                if (mDevices.containsKey(addr)) {
+                    return;
+                }
+
+                Device device = new Device(addr, "", Device.DEVICETYPE_TACTOSY);
+                device.setConnected(true);
+                mDevices.put(addr, device);
+
+                readName(addr);
+            }
+
+            @Override
+            public void onDisconnect(String addr) {}
+
+            @Override
+            public void onConnectionError(String addr) {}
+        });
+
+        addDataCallback(new DataCallback() {
+            @Override
+            public void onRead(String address, UUID charUUID, byte[] data, int status) {
+                if (data == null || !charUUID.equals(Constants.MOTOR_DEVICE_NAME)) {
+                    return;
+                }
+
+                Device target = mDevices.get(address);
+
+                if (target != null && target.getDeviceName().isEmpty()) {
+                    target.setDeviceName(new String(data));
+                }
+            }
+
+            @Override
+            public void onWrite(String address, UUID charUUID, int status) {}
+
+            @Override
+            public void onDataError(String address, String charId, int errCode) {}
+        });
+    }
+
     public void scan() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+            mBluetoothAdapter.startLeScan(mOlderScanCallback);
+        } else {
+            BluetoothLeScanner scanner = mBluetoothAdapter.getBluetoothLeScanner();
+            scanner.startScan(getNewerScanCallback());
+        }
     }
 
     public void stopScan() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+            mBluetoothAdapter.stopLeScan(mOlderScanCallback);
+        } else {
+            BluetoothLeScanner scanner = mBluetoothAdapter.getBluetoothLeScanner();
+            scanner.stopScan(getNewerScanCallback());
+        }
+    }
+
+    public void setScanCallback(ScanCallback callback) {
+        mScanCallback = callback;
     }
 
     public List<Device> getConnectedDevices() {

@@ -1,4 +1,4 @@
-package com.bhaptics.ble.core;
+package com.bhaptics.ble.client;
 
 import android.content.ComponentName;
 import android.content.Context;
@@ -11,11 +11,12 @@ import android.os.RemoteException;
 import android.util.Log;
 
 import com.bhaptics.ble.util.Constants;
+import com.bhaptics.ble.util.LogUtils;
 import com.bhaptics.ble.util.ReadyQueue;
 
-import static android.content.ContentValues.TAG;
-
 public abstract class BaseClient {
+
+    private static final String TAG = LogUtils.makeLogTag(BaseClient.class);
 
     private Messenger mService = null;
 
@@ -67,8 +68,8 @@ public abstract class BaseClient {
 
     public void bindService(Context context) {
         Intent intent = new Intent();
-        intent.setComponent(new ComponentName("com.bhaptics.tactosy", "com.bhaptics.ble.core.TactosyBLEService"));
-        context.bindService(intent, mConnection, 0 /*Context.BIND_IMPORTANT*/);
+        intent.setComponent(new ComponentName("com.bhaptics.tactosy", "com.bhaptics.ble.service.TactosyBLEService"));
+        context.bindService(intent, mConnection, 0);
     }
 
     public void unbindService(Context context) {
