@@ -54,6 +54,9 @@ public class TactosyClient extends BaseClient {
 
     @Override
     protected ClientHandler getClientHandler() {
+        if (mClientHandler == null) {
+            mClientHandler = new ClientHandler();
+        }
         return mClientHandler;
     }
 
