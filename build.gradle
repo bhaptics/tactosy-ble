@@ -5,6 +5,12 @@ android {
     compileSdkVersion 24
     buildToolsVersion "23.0.3"
 
+    defaultConfig {
+        minSdkVersion 18
+        targetSdkVersion 24
+        versionCode 4
+        versionName "0.9.2"
+    }
     buildTypes {
         release {
             minifyEnabled false
