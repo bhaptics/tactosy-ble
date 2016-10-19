@@ -53,7 +53,7 @@ public class Device {
     @Override
     public String toString() {
         String connected = mConnected ? "connected" : "disconnected";
-        return "Tactosy {" +
+        return "Device {" +
                 "addr: " + mAddress + ", " +
                 "name: " + mDeviceName + ", " +
                 "battery: " + mBattery + "% remains, " +

@@ -5,6 +5,7 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.le.BluetoothLeScanner;
+import android.bluetooth.le.ScanRecord;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.content.Context;
@@ -12,6 +13,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Message;
 import android.os.RemoteException;
+import android.util.Log;
 
 import com.bhaptics.ble.service.TactosyBLEService;
 import com.bhaptics.ble.util.LogUtils;
@@ -25,6 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class TactosyClient extends BaseClient {
 
@@ -64,7 +67,7 @@ public class TactosyClient extends BaseClient {
      * Devices list selectable by address.
      * This is filled when devices are scanned. (after {@link TactosyClient#scan})
      */
-    private Map<String, Device> mDevices;
+    private ConcurrentHashMap<String, Device> mDevices;
 
     // This callback is just for backward compatibility,
     // This should be deprecated.
@@ -92,7 +95,8 @@ public class TactosyClient extends BaseClient {
 
                     BluetoothDevice device = result.getDevice();
                     int rssi = result.getRssi();
-                    byte[] scanRecord = result.getScanRecord().getBytes();
+                    ScanRecord record = result.getScanRecord();
+                    byte[] scanRecord = record != null ? record.getBytes() : new byte[0];
 
                     onDeviceScanned(device, rssi, scanRecord);
                 }
@@ -197,7 +201,7 @@ public class TactosyClient extends BaseClient {
      */
     protected TactosyClient(Context context) {
         super();
-        mDevices = new HashMap<>();
+        mDevices = new ConcurrentHashMap<>();
         mClientHandler = getClientHandler();
         BluetoothManager bluetoothManager =
                 (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
@@ -247,6 +251,12 @@ public class TactosyClient extends BaseClient {
     }
 
     public void scan() {
+        for (Device device : mDevices.values()) {
+            if (!device.getConnected()) {
+                mDevices.remove(device.getAddress());
+            }
+        }
+
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
             mBluetoothAdapter.startLeScan(mOlderScanCallback);
         } else {
