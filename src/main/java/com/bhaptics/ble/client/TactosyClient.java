@@ -13,7 +13,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Message;
 import android.os.RemoteException;
-import android.util.Log;
 
 import com.bhaptics.ble.service.TactosyBLEService;
 import com.bhaptics.ble.util.LogUtils;
@@ -23,9 +22,7 @@ import com.bhaptics.ble.util.ScanRecordParser;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
