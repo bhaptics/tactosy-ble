@@ -203,7 +203,10 @@ public class TactosyClient extends BaseClient {
         BluetoothManager bluetoothManager =
                 (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
         mBluetoothAdapter = bluetoothManager.getAdapter();
+    }
 
+    @Override
+    public void bindService(Context context) {
         addConnectCallback(new ConnectCallback() {
             @Override
             public void onConnect(String addr) {
@@ -216,6 +219,10 @@ public class TactosyClient extends BaseClient {
                 mDevices.put(addr, device);
 
                 readName(addr);
+
+                if (mScanCallback != null) {
+                    mScanCallback.onScan(mDevices.values());
+                }
             }
 
             @Override
@@ -245,6 +252,8 @@ public class TactosyClient extends BaseClient {
             @Override
             public void onDataError(String address, String charId, int errCode) {}
         });
+
+        super.bindService(context);
     }
 
     public void scan() {
