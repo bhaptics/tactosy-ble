@@ -1,5 +1,6 @@
 package com.bhaptics.ble.service;
 
+import android.app.Service;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
@@ -23,10 +24,15 @@ public class BaseGattCallback extends BluetoothGattCallback {
     private static final String TAG = LogUtils.makeLogTag(BaseGattCallback.class);
     private Messenger mClient;
     private Map<String, LinkedBlockingQueue<Object>> mDeviceLock;
+    private GattHook mGattHook;
 
-    public BaseGattCallback(Messenger client, Map<String, LinkedBlockingQueue<Object>> lock) {
+    public BaseGattCallback(Service service, Messenger client, Map<String, LinkedBlockingQueue<Object>> lock) {
         mClient = client;
         mDeviceLock = lock;
+
+        if (service instanceof GattHook) {
+            mGattHook = (GattHook) service;
+        }
     }
 
     @Override
@@ -43,16 +49,7 @@ public class BaseGattCallback extends BluetoothGattCallback {
             case BluetoothProfile.STATE_DISCONNECTED:
                 Log.i(TAG, "onConnectionStateChange: " + address + " disconnected.");
                 onConnectionResponse(gatt, newState);
-
-//                Set<String> addrs = new HashSet<>();
-
-//                for (BluetoothDevice _device: mBluetoothManager.getConnectedDevices(BluetoothProfile.GATT)) {
-//                    if (mBluetoothGattMap.containsKey(_device.getAddress())) {
-//                        addrs.add(_device.getAddress());
-//                    }
-//                }
-
-//                mSharedPref.edit().putStringSet(KEY_SAVED_ADDRS, addrs).apply();
+                mGattHook.onDisconnect(gatt);
                 break;
             default:
                 Log.d(TAG, "New state not processed: " + newState);
@@ -63,20 +60,10 @@ public class BaseGattCallback extends BluetoothGattCallback {
     @Override
     public void onServicesDiscovered(BluetoothGatt gatt, int status) {
         // NOTE It is assumed when characteristic only contained by tactosy is read.
-        // TODO Filter only tactosys using uuid of advertising.
         Log.i(TAG, "onServicesDiscovered() " + status);
 
-//        Set<String> addrs = new HashSet<>();
-
-//        for (BluetoothDevice device: mBluetoothManager.getConnectedDevices(BluetoothProfile.GATT)) {
-//            if (mBluetoothGattMap.containsKey(device.getAddress())) {
-//                addrs.add(device.getAddress());
-//            }
-//        }
-//
-//        mSharedPref.edit().putStringSet(KEY_SAVED_ADDRS, addrs).apply();
-
         onConnectionResponse(gatt, BluetoothProfile.STATE_CONNECTED);
+        mGattHook.onConnect(gatt);
     }
 
     @Override

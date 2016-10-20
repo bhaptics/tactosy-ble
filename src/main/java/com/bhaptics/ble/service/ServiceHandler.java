@@ -82,13 +82,13 @@ public class ServiceHandler extends Handler {
         }
     }
 
-    protected BluetoothGattCallback getGattCallback(Messenger client,
+    protected BluetoothGattCallback getGattCallback(Service service, Messenger client,
                                                     Map<String, LinkedBlockingQueue<Object>> lock) {
-        return new BaseGattCallback(client, lock);
+        return new BaseGattCallback(service, client, lock);
     }
 
     private void replyToClient(Messenger client) {
-        mCallback = getGattCallback(client, mDeviceLock);
+        mCallback = getGattCallback(mParent, client, mDeviceLock);
         Message response = obtainMessage();
 
         List<BluetoothDevice> devices =
@@ -109,8 +109,10 @@ public class ServiceHandler extends Handler {
 
     private void connect(Message msg) {
         Bundle data = msg.getData();
-        String addr = data.getString(Constants.KEY_ADDR);
+        connect(data.getString(Constants.KEY_ADDR));
+    }
 
+    protected void connect(String addr) {
         if (addr == null || addr.isEmpty()) {
             throw new BLEException("Address not provided");
         }
@@ -135,8 +137,10 @@ public class ServiceHandler extends Handler {
 
     private void disconnect(Message msg) {
         Bundle data = msg.getData();
-        String addr = data.getString(Constants.KEY_ADDR);
+        disconnect(data.getString(Constants.KEY_ADDR));
+    }
 
+    protected void disconnect(String addr) {
         if (addr == null || addr.isEmpty()) {
             throw new BLEException("Address not provided");
         }
@@ -150,6 +154,7 @@ public class ServiceHandler extends Handler {
 
         conn.disconnect();
         mConnections.remove(addr);
+
     }
 
     private void readCharacteristic(Message msg) {
@@ -167,7 +172,7 @@ public class ServiceHandler extends Handler {
         } else {
             try {
                 // TODO more refined impl of blocking behavior.
-                // it blocks all other requests when it blocks.
+                // it blocks all other (devices') requests when it blocks.
                 queue.take();
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -211,7 +216,7 @@ public class ServiceHandler extends Handler {
         } else {
             try {
                 // TODO more refined impl of blocking behavior.
-                // it blocks all other requests when it blocks.
+                // it blocks all other (devices') requests when it blocks.
                 queue.take();
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -258,7 +263,7 @@ public class ServiceHandler extends Handler {
         } else {
             try {
                 // TODO more refined impl of blocking behavior.
-                // it blocks all other requests when it blocks.
+                // it blocks all other (devices') requests when it blocks.
                 queue.take();
             } catch (InterruptedException e) {
                 e.printStackTrace();

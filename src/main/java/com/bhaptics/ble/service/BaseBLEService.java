@@ -45,5 +45,10 @@ public abstract class BaseBLEService extends Service {
         super.onDestroy();
     }
 
+    protected Looper getThreadLooper() {
+        return mLooper;
+    }
+
+
     protected abstract ServiceHandler getServiceHandler(Looper looper);
 }
