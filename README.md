@@ -33,4 +33,4 @@ compile 'com.bhaptics.tactosy:ble:0.9.4'
 
 # Documentation
 
-* Class references
+* Class references in docs/
