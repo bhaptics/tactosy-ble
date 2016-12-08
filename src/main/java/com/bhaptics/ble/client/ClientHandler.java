@@ -13,6 +13,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * {@link BaseClient}'s handler to handle tactosies' callbacks.
+ */
 public class ClientHandler extends Handler {
 
     private ArrayList<TactosyClient.ConnectCallback> mConnectCallbacks;

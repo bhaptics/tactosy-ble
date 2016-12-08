@@ -14,6 +14,17 @@ import com.bhaptics.ble.util.Constants;
 import com.bhaptics.ble.util.LogUtils;
 import com.bhaptics.ble.util.ReadyQueue;
 
+/**
+ * Client to communicate with {@link com.bhaptics.ble.service.BaseBLEService}</br>
+ * </br>
+ * This client binds to {@link com.bhaptics.ble.service.BaseBLEService}
+ * and exchange their {@link Messenger}</br>
+ * </br>
+ * {@link ClientHandler} should be specified to receive tactosies' callbacks (through service).</br>
+ * </br>
+ * If more callbacks (after binding to service) is needed,
+ * call {@link #addOnReadyListener(OnReadyListener)}</br>
+ */
 public abstract class BaseClient {
 
     private static final String TAG = LogUtils.makeLogTag(BaseClient.class);
@@ -30,7 +41,7 @@ public abstract class BaseClient {
 
     /**
      * Service connection for binding & inter-communicating.
-     * @see <a href=https://developer.android.com/guide/components/bound-services.html?hl=ko>this</a>
+     * @see <a href=https://developer.android.com/guide/components/bound-services.html?hl=ko>Bound service(android developer)</a>
      */
     protected ServiceConnection mConnection = new ServiceConnection() {
         @Override

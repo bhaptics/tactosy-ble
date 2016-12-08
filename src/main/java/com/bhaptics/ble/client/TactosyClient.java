@@ -15,7 +15,6 @@ import android.os.Message;
 import android.os.RemoteException;
 
 import com.bhaptics.ble.service.TactosyBLEService;
-import com.bhaptics.ble.util.LogUtils;
 import com.bhaptics.ble.util.Constants;
 import com.bhaptics.ble.model.Device;
 import com.bhaptics.ble.util.ScanRecordParser;
@@ -26,9 +25,12 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Detail implementation of {@link BaseClient}.</br>
+ * </br>
+ * There are scanning, reading and writing tactosies' characteristics.</br>
+ */
 public class TactosyClient extends BaseClient {
-
-    private static final String TAG = LogUtils.makeLogTag(TactosyClient.class);
 
     private static final int TACTOSY_APPEARANCE = 508;
 
@@ -44,7 +46,7 @@ public class TactosyClient extends BaseClient {
 
     /**
      * Response handler to handle reponses from {@link TactosyBLEService}.
-     * @see {@link ClientHandler}
+     * @see ClientHandler
      */
     private ClientHandler mClientHandler;
 
@@ -137,7 +139,7 @@ public class TactosyClient extends BaseClient {
      * {@link #disconnect(Device)} is called.
      */
     public interface ConnectCallback {
-        /*
+        /**
          * Called when BLE mConnection is created successfully.
          *
          * @param addr MAC address of connected device.
@@ -327,7 +329,7 @@ public class TactosyClient extends BaseClient {
     /**
      * Send message to {@link TactosyBLEService} for disconnecting device.
      *
-     * @param device
+     * @param device to disconnect
      */
     public void disconnect(Device device) {
         if (device != null) {

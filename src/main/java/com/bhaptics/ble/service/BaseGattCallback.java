@@ -19,6 +19,13 @@ import com.bhaptics.ble.util.LogUtils;
 import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
 
+/**
+ * GattCallbacks from BLE devices.</br>
+ * </br>
+ * Connect/disconnect and read/write operations from devices return their callbacks to this.<br/>
+ * </br>
+ * It just relays their callbacks to {@link com.bhaptics.ble.client.BaseClient}</br>
+ */
 public class BaseGattCallback extends BluetoothGattCallback {
 
     private static final String TAG = LogUtils.makeLogTag(BaseGattCallback.class);

@@ -30,6 +30,16 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.LinkedBlockingQueue;
 
+/**
+ * Service handler implementation to be used in {@link BaseBLEService}.</br>
+ * </br>
+ * This handler contains connect/disconnect read/write and notification calls to tactosy device.</br>
+ * </br>
+ * You can extend this handler to add new characteristic and handle it by</br>
+ * Overriding {@link #handleMessage(Message)}</br>
+ *
+ * @see BaseGattCallback
+ */
 public class ServiceHandler extends Handler {
 
     private static final String TAG = LogUtils.makeLogTag(ServiceHandler.class);

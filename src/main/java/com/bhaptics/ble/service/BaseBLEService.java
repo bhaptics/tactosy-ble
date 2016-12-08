@@ -8,11 +8,19 @@ import android.os.Looper;
 import android.os.Process;
 import android.os.Messenger;
 
-import com.bhaptics.ble.util.LogUtils;
-
+/**
+ * Base service for ble connections.</br>
+ * Applications for tactosy should has a class based on {@link BaseBLEService}.</br>
+ * This service is used for binding / IPC using {@link Messenger}.</br>
+ * <b>Connections and messaging should be handled in {@link ServiceHandler},
+ * which is provided in {@link #getServiceHandler(Looper)}</b></br>
+ *</br>
+ *</br>
+ * @see <a href="https://developer.android.com/guide/components/bound-services.html">Bound service(android developers)</a>
+ * @see TactosyBLEService
+ * @see GearVRSpoiledService
+ */
 public abstract class BaseBLEService extends Service {
-
-    private static final String TAG = LogUtils.makeLogTag(BaseBLEService.class);
 
     private Messenger mMessenger;
 
@@ -45,10 +53,21 @@ public abstract class BaseBLEService extends Service {
         super.onDestroy();
     }
 
+    /**
+     * @return Looper of a thread that this service class have.
+     */
     protected Looper getThreadLooper() {
         return mLooper;
     }
 
-
+    /**
+     * Abstract method to return service handler.
+     * You should implement it in subclass.
+     *
+     * @see ServiceHandler
+     *
+     * @param looper Handler handles in this looper (thread).
+     * @return ServiceHandler you implemented.
+     */
     protected abstract ServiceHandler getServiceHandler(Looper looper);
 }
