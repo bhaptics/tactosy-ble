@@ -21,7 +21,7 @@ public class ClientHandler extends Handler {
     private ArrayList<TactosyClient.ConnectCallback> mConnectCallbacks;
     private ArrayList<TactosyClient.DataCallback> mDataCallbacks;
 
-    ClientHandler() {
+    public ClientHandler() {
         super();
         mConnectCallbacks = new ArrayList<>();
         mDataCallbacks = new ArrayList<>();
