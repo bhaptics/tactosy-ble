@@ -200,7 +200,7 @@ public class ServiceHandler extends Handler {
 
         BluetoothGattService service = gatt.getService(serviceId);
         if (service == null) {
-            throw new BLEException("Attempt to reading non-existing service");
+            throw new BLEException("Attempt to reading non-existing service: " + serviceId);
         }
 
         BluetoothGattCharacteristic characteristic = service.getCharacteristic(charId);
@@ -244,7 +244,7 @@ public class ServiceHandler extends Handler {
 
         BluetoothGattService service = gatt.getService(serviceId);
         if (service == null) {
-            throw new BLEException("Attempt to writing non-existing service");
+            throw new BLEException("Attempt to writing non-existing service: " + serviceId);
         }
 
         BluetoothGattCharacteristic characteristic = service.getCharacteristic(charId);
