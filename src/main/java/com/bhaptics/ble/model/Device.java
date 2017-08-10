@@ -1,21 +1,37 @@
 package com.bhaptics.ble.model;
 
 public class Device {
-    public static final int DEVICETYPE_TACTOSY = 0;
-    public static final int DEVICETYPE_OTHER = 1;
+    public enum DeviceType {
+        Tactosy(508), Tactot(509), Tactal(510), Others(-1);
+        private int appearance;
+        DeviceType(int appearance) {
+            this.appearance = appearance;
+        }
+
+        public static DeviceType ToDeviceType(int appearance) {
+            DeviceType[] values = DeviceType.class.getEnumConstants();
+            for(DeviceType type : values) {
+                if (type.appearance == appearance) {
+                    return type;
+                }
+            }
+
+            return Others;
+        }
+    }
 
     private boolean mConnected;
     private String mAddress;
     private String mDeviceName;
     private int mBattery;
-    private int mType;
+    private DeviceType mType;
 
-    public Device(String macAddress, String deviceName, int type) {
+    public Device(String macAddress, String deviceName, DeviceType deviceType) {
         mAddress = macAddress;
         mDeviceName = deviceName;
         mConnected = false;
         mBattery = -1;
-        mType = type;
+        mType = deviceType;
     }
 
     public void setConnected(boolean conn) {
@@ -46,7 +62,7 @@ public class Device {
         return mBattery;
     }
 
-    public int getType() {
+    public DeviceType getType() {
         return mType;
     }
 

@@ -13,6 +13,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Message;
 import android.os.RemoteException;
+import android.util.Log;
 
 import com.bhaptics.ble.service.TactosyBLEService;
 import com.bhaptics.ble.util.Constants;
@@ -31,9 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * There are scanning, reading and writing tactosies' characteristics.</br>
  */
 public class TactosyClient extends BaseClient {
-
-    private static final int TACTOSY_APPEARANCE = 508;
-
+    private static final String TAG = "TactosyClient";
     private static TactosyClient sInstance = null;
 
     public static TactosyClient getInstance(Context context) {
@@ -112,10 +111,7 @@ public class TactosyClient extends BaseClient {
 
         int appearance = ScanRecordParser.getAppearance(scanRecord);
 
-        int deviceType = appearance == TACTOSY_APPEARANCE ? Device.DEVICETYPE_TACTOSY :
-                Device.DEVICETYPE_OTHER;
-
-        mDevices.put(device.getAddress(), new Device(device.getAddress(), device.getName(), deviceType));
+        mDevices.put(device.getAddress(), new Device(device.getAddress(), device.getName(), Device.DeviceType.ToDeviceType(appearance)));
 
         mScanCallback.onScan(mDevices.values());
     }
@@ -216,7 +212,8 @@ public class TactosyClient extends BaseClient {
                     return;
                 }
 
-                Device device = new Device(addr, "", Device.DEVICETYPE_TACTOSY);
+                Log.e(TAG, "onConnect: " + addr);
+                Device device = new Device(addr, "", Device.DeviceType.Tactosy);
                 device.setConnected(true);
                 mDevices.put(addr, device);
 
