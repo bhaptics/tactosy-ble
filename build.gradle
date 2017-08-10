@@ -3,7 +3,7 @@ apply from: 'publish.gradle'
 
 android {
     compileSdkVersion 24
-    buildToolsVersion "23.0.3"
+    buildToolsVersion "25.0.0"
 
     defaultConfig {
         minSdkVersion 18
@@ -24,7 +24,7 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.2.2'
+        classpath 'com.android.tools.build:gradle:2.2.3'
 
         // Bintray sample
         classpath 'com.github.dcendents:android-maven-gradle-plugin:1.5'

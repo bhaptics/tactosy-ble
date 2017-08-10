@@ -79,7 +79,7 @@ public abstract class BaseClient {
 
     public void bindService(Context context) {
         Intent intent = new Intent();
-        intent.setComponent(new ComponentName("com.bhaptics.tactosy", "com.bhaptics.ble.service.GearVRSpoiledService"));
+        intent.setComponent(new ComponentName("com.bhaptics.player", "com.bhaptics.ble.service.GearVRSpoiledService"));
         context.bindService(intent, mConnection, 0);
     }
 
