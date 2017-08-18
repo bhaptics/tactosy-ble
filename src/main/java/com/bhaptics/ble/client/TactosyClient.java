@@ -111,7 +111,7 @@ public class TactosyClient extends BaseClient {
 
         int appearance = ScanRecordParser.getAppearance(scanRecord);
 
-        mDevices.put(device.getAddress(), new Device(device.getAddress(), device.getName(), Device.DeviceType.ToDeviceType(appearance)));
+        mDevices.put(device.getAddress(), new Device(device.getAddress(), device.getName(), Device.DeviceType.ToDeviceType(appearance, device.getName())));
 
         mScanCallback.onScan(mDevices.values());
     }
@@ -213,7 +213,7 @@ public class TactosyClient extends BaseClient {
                 }
 
                 Log.e(TAG, "onConnect: " + addr);
-                Device device = new Device(addr, "", Device.DeviceType.Tactosy);
+                Device device = new Device(addr, "", Device.DeviceType.TactosyV1);
                 device.setConnected(true);
                 mDevices.put(addr, device);
 
