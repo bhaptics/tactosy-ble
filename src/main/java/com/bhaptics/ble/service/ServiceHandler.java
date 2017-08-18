@@ -234,28 +234,36 @@ public class ServiceHandler extends Handler {
             }
         }
 
-        UUID serviceId = UUID.fromString(data.getString(Constants.KEY_SERVICE_ID));
-        UUID charId = UUID.fromString(data.getString(Constants.KEY_CHAR_ID));
+        try {
+            UUID serviceId = UUID.fromString(data.getString(Constants.KEY_SERVICE_ID));
+            UUID charId = UUID.fromString(data.getString(Constants.KEY_CHAR_ID));
 
-        BluetoothGatt gatt = mConnections.get(addr);
-        if (gatt == null) {
-            throw new BLEException("Attempt to reading broken connection");
+            BluetoothGatt gatt = mConnections.get(addr);
+            if (gatt == null) {
+                Log.e(TAG, "writeCharacteristic: Attempt to reading broken connection: " + serviceId);
+                return;
+            }
+
+            BluetoothGattService service = gatt.getService(serviceId);
+            if (service == null) {
+                Log.e(TAG, "writeCharacteristic: Attempt to writing non-existing service: " + serviceId);
+                return;
+            }
+
+            BluetoothGattCharacteristic characteristic = service.getCharacteristic(charId);
+            if (characteristic == null) {
+                Log.e(TAG, "writeCharacteristic: Attempt to writing non-existing characteristic: " + serviceId);
+                return;
+            }
+
+            byte[] values = data.getByteArray(Constants.KEY_VALUES);
+            characteristic.setValue(values);
+
+            gatt.writeCharacteristic(characteristic);
+        } catch (Exception e) {
+            Log.e(TAG, "writeCharacteristic: ", e);
         }
 
-        BluetoothGattService service = gatt.getService(serviceId);
-        if (service == null) {
-            throw new BLEException("Attempt to writing non-existing service: " + serviceId);
-        }
-
-        BluetoothGattCharacteristic characteristic = service.getCharacteristic(charId);
-        if (characteristic == null) {
-            throw new BLEException("Attempt to writing non-existing characteristic");
-        }
-
-        byte[] values = data.getByteArray(Constants.KEY_VALUES);
-        characteristic.setValue(values);
-
-        gatt.writeCharacteristic(characteristic);
     }
 
     private void setNotification(Message msg) {

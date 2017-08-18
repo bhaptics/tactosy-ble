@@ -2,18 +2,38 @@ package com.bhaptics.ble.model;
 
 public class Device {
     public enum DeviceType {
-        Tactosy(508), Tactot(509), Tactal(510), Others(-1);
+        TactosyV1(508, "tactosy_v1", "tactosy-v1"),
+        TactosyV2(508, "tactosy_v2", "tactosy-v2"),
+        Tactot(508, "tactot_", "tactot"),
+        Tactal(508, "tactal_", "tactal"),
+        Racket(508, "tactosy10_", "tactosy10"),
+        Others(-1, "unknwon", "unkown");
         private int appearance;
-        DeviceType(int appearance) {
-            this.appearance = appearance;
+        private String deviceNamePrefix;
+        private String updateDeviceName;
+
+        public String getUpdateDeviceName() {
+            return updateDeviceName;
         }
 
-        public static DeviceType ToDeviceType(int appearance) {
-            DeviceType[] values = DeviceType.class.getEnumConstants();
-            for(DeviceType type : values) {
-                if (type.appearance == appearance) {
-                    return type;
+        DeviceType(int appearance, String deviceNamePrefix, String updateDeviceName) {
+            this.appearance = appearance;
+            this.deviceNamePrefix = deviceNamePrefix;
+            this.updateDeviceName = updateDeviceName;
+        }
+
+        public static DeviceType ToDeviceType(int appearance, String deviceName) {
+            try {
+                String name = deviceName.toLowerCase();
+
+                DeviceType[] values = DeviceType.class.getEnumConstants();
+                for(DeviceType type : values) {
+                    if (type.appearance == appearance && name.startsWith(type.deviceNamePrefix)) {
+                        return type;
+                    }
                 }
+            } catch (Exception e) {
+
             }
 
             return Others;
