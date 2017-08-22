@@ -1,5 +1,7 @@
 package com.bhaptics.ble.model;
 
+import android.util.Log;
+
 public class Device {
     public enum DeviceType {
         TactosyV1(508, "tactosy_v1", "tactosy-v1"),
@@ -22,13 +24,13 @@ public class Device {
             this.updateDeviceName = updateDeviceName;
         }
 
-        public static DeviceType ToDeviceType(int appearance, String deviceName) {
+        public static DeviceType ToDeviceType(String deviceName) {
             try {
                 String name = deviceName.toLowerCase();
 
                 DeviceType[] values = DeviceType.class.getEnumConstants();
                 for(DeviceType type : values) {
-                    if (type.appearance == appearance && name.startsWith(type.deviceNamePrefix)) {
+                    if (name.startsWith(type.deviceNamePrefix)) {
                         return type;
                     }
                 }

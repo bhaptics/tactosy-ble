@@ -111,7 +111,7 @@ public class TactosyClient extends BaseClient {
 
         int appearance = ScanRecordParser.getAppearance(scanRecord);
 
-        mDevices.put(device.getAddress(), new Device(device.getAddress(), device.getName(), Device.DeviceType.ToDeviceType(appearance, device.getName())));
+        mDevices.put(device.getAddress(), new Device(device.getAddress(), device.getName(), Device.DeviceType.ToDeviceType( device.getName())));
 
         mScanCallback.onScan(mDevices.values());
     }
