@@ -68,6 +68,7 @@ public class ServiceHandler extends Handler {
 
     @Override
     public void handleMessage(Message msg) {
+        Log.e(TAG,"handleMessage : "+msg);
         switch (msg.what) {
             case Constants.MESSAGE_REPLY:
                 replyToClient(msg.replyTo);
@@ -233,6 +234,7 @@ public class ServiceHandler extends Handler {
                 return;
             }
         }
+        Log.e(TAG,msg.getTarget().toString());
 
         try {
             UUID serviceId = UUID.fromString(data.getString(Constants.KEY_SERVICE_ID));
@@ -251,9 +253,11 @@ public class ServiceHandler extends Handler {
             }
 
             BluetoothGattCharacteristic characteristic = service.getCharacteristic(charId);
+
             if (characteristic == null) {
                 Log.e(TAG, "writeCharacteristic: Attempt to writing non-existing characteristic: " + serviceId);
-                return;
+                characteristic = service.getCharacteristic(UUID.fromString("6e400002-b5a3-f393-e0a9-e50e24dcca9e"));
+                //return;
             }
 
             byte[] values = data.getByteArray(Constants.KEY_VALUES);
@@ -300,6 +304,7 @@ public class ServiceHandler extends Handler {
         }
 
         BluetoothGattCharacteristic characteristic = service.getCharacteristic(charId);
+        Log.e(TAG," - - "+charId.toString());
         if (characteristic == null) {
             throw new BLEException("Attempt to writing non-existing characteristic");
         }

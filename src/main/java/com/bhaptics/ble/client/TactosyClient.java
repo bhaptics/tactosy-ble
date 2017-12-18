@@ -213,7 +213,7 @@ public class TactosyClient extends BaseClient {
                 }
 
                 Log.e(TAG, "onConnect: " + addr);
-                Device device = new Device(addr, "", Device.DeviceType.TactosyV1);
+                Device device = new Device(addr, "", Device.DeviceType.TactosyV2);
                 device.setConnected(true);
                 mDevices.put(addr, device);
 
