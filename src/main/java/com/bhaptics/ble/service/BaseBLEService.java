@@ -18,7 +18,6 @@ import android.os.Messenger;
  *</br>
  * @see <a href="https://developer.android.com/guide/components/bound-services.html">Bound service(android developers)</a>
  * @see TactosyBLEService
- * @see GearVRSpoiledService
  */
 public abstract class BaseBLEService extends Service {
 

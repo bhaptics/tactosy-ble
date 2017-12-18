@@ -1,7 +1,6 @@
 package com.bhaptics.ble.client;
 
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothProfile;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -11,20 +10,14 @@ import com.bhaptics.ble.util.Constants;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * {@link BaseClient}'s handler to handle tactosies' callbacks.
  */
 public class ClientHandler extends Handler {
 
-    private ArrayList<TactosyClient.ConnectCallback> mConnectCallbacks;
-    private ArrayList<TactosyClient.DataCallback> mDataCallbacks;
-
     public ClientHandler() {
         super();
-        mConnectCallbacks = new ArrayList<>();
-        mDataCallbacks = new ArrayList<>();
     }
 
     private static List<Parcelable> safe(List<Parcelable> list) {
@@ -39,12 +32,6 @@ public class ClientHandler extends Handler {
                 break;
             case Constants.MESSAGE_CONNECT_RESPONSE:
                 onConnectResponse(msg);
-                break;
-            case Constants.MESSAGE_READ_SUCCESS:
-                onRead(msg);
-                break;
-            case Constants.MESSAGE_WRITE_SUCCESS:
-                onWrite(msg);
                 break;
             case Constants.MESSAGE_READ_ERROR:
             case Constants.MESSAGE_WRITE_ERROR:
@@ -64,73 +51,15 @@ public class ClientHandler extends Handler {
 
         for (Parcelable p : safe(data.getParcelableArrayList(Constants.KEY_CONNECTED))) {
             BluetoothDevice device = (BluetoothDevice) p;
-
-            for (TactosyClient.ConnectCallback callback : mConnectCallbacks) {
-                callback.onConnect(device.getAddress());
-            }
         }
     }
 
     private void onConnectResponse(Message msg) {
         Bundle data = msg.getData();
-
-        int status = msg.arg1;
-        String address = data.getString(Constants.KEY_ADDR);
-
-        for (TactosyClient.ConnectCallback callback : mConnectCallbacks) {
-            if (status == BluetoothProfile.STATE_CONNECTED) {
-                callback.onConnect(address);
-            } else if (status == BluetoothProfile.STATE_DISCONNECTED) {
-                callback.onDisconnect(address);
-            } else {
-                callback.onConnectionError(address);
-            }
-        }
     }
 
-    private void onRead(Message msg) {
-        Bundle data = msg.getData();
-
-        int status = msg.arg1;
-        String address = data.getString(Constants.KEY_ADDR);
-        UUID uuid = UUID.fromString(data.getString(Constants.KEY_CHAR_ID));
-
-        byte[] bytes = data.getByteArray(Constants.KEY_VALUES);
-
-        for (TactosyClient.DataCallback callback : mDataCallbacks) {
-            callback.onRead(address, uuid, bytes, status);
-        }
-    }
-
-    private void onWrite(Message msg) {
-        Bundle data = msg.getData();
-
-        int status = msg.arg1;
-        String address = data.getString(Constants.KEY_ADDR);
-        UUID uuid = UUID.fromString(data.getString(Constants.KEY_CHAR_ID));
-
-        for (TactosyClient.DataCallback callback : mDataCallbacks) {
-            callback.onWrite(address, uuid, status);
-        }
-    }
 
     private void onError(Message msg) {
         Bundle data = msg.getData();
-
-        int errCode = Constants.MESSAGE_WRITE_ERROR;
-        String address = data.getString(Constants.KEY_ADDR);
-        String charId = data.getString(Constants.KEY_CHAR_ID);
-
-        for (TactosyClient.DataCallback callback : mDataCallbacks) {
-            callback.onDataError(address, charId, errCode);
-        }
-    }
-
-    void addConnectCallback(TactosyClient.ConnectCallback callback) {
-        mConnectCallbacks.add(callback);
-    }
-
-    void addDataCallback(TactosyClient.DataCallback callback) {
-        mDataCallbacks.add(callback);
     }
 }
