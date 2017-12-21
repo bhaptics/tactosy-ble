@@ -48,6 +48,7 @@ public class Device {
     private int mBattery;
     private DeviceType mType;
 
+
     public Device(String macAddress, String deviceName, DeviceType deviceType) {
         mAddress = macAddress;
         mDeviceName = deviceName;

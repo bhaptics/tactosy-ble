@@ -20,8 +20,12 @@ import android.os.RemoteException;
 import android.util.Log;
 
 import com.bhaptics.ble.BLEException;
+import com.bhaptics.ble.client.TactosyClient;
+import com.bhaptics.ble.model.Device;
+import com.bhaptics.ble.model.Feedback;
 import com.bhaptics.ble.util.Constants;
 import com.bhaptics.ble.util.LogUtils;
+import com.google.gson.Gson;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -53,7 +57,21 @@ public class ServiceHandler extends Handler {
 
     private Map<String, LinkedBlockingQueue<Object>> mDeviceLock;
 
+    //debug
+    public Map<String , LinkedBlockingQueue<Object>> getmDeviceLock () {
+        return this.mDeviceLock;
+    }
+    public Map<String, BluetoothGatt> getmConnections () {
+        return this.mConnections;
+    }
+
     private Service mParent;
+
+    // 싱글톤 적용 예정
+    private static ServiceHandler instance = null;
+    public static ServiceHandler getInstance() {
+        return instance;
+    }
 
     public ServiceHandler(Looper looper, Service service) {
         super(looper);
@@ -64,11 +82,15 @@ public class ServiceHandler extends Handler {
 
         mDeviceLock = new HashMap<>();
         mConnections = new HashMap<>();
+
+        instance = this;
     }
+
+
 
     @Override
     public void handleMessage(Message msg) {
-        Log.e(TAG,"handleMessage : "+msg);
+        Log.e(TAG, "handleMessage : " + msg);
         switch (msg.what) {
             case Constants.MESSAGE_REPLY:
                 replyToClient(msg.replyTo);
@@ -85,6 +107,9 @@ public class ServiceHandler extends Handler {
             case Constants.MESSAGE_WRITE:
                 writeCharacteristic(msg);
                 break;
+            case Constants.MESSAGE_WRITE_V2:
+                tactFeedBack.onFeedBack(msg);
+                break;
             case Constants.MESSAGE_SET_NOTIFICATION:
                 setNotification(msg);
                 break;
@@ -92,6 +117,11 @@ public class ServiceHandler extends Handler {
                 break;
         }
     }
+    public interface TactFeedBack {
+        void onFeedBack(Message msg);
+    }
+    private TactFeedBack tactFeedBack;
+    public void setTactFeedBack(TactFeedBack tactFeedBack) { this.tactFeedBack = tactFeedBack; }
 
     protected BluetoothGattCallback getGattCallback(Service service, Messenger client,
                                                     Map<String, LinkedBlockingQueue<Object>> lock) {
@@ -234,7 +264,7 @@ public class ServiceHandler extends Handler {
                 return;
             }
         }
-        Log.e(TAG,msg.getTarget().toString());
+        Log.e(TAG, msg.getTarget().toString());
 
         try {
             UUID serviceId = UUID.fromString(data.getString(Constants.KEY_SERVICE_ID));
@@ -270,6 +300,7 @@ public class ServiceHandler extends Handler {
 
     }
 
+
     private void setNotification(Message msg) {
         Bundle data = msg.getData();
         String addr = data.getString(Constants.KEY_ADDR);
@@ -304,7 +335,7 @@ public class ServiceHandler extends Handler {
         }
 
         BluetoothGattCharacteristic characteristic = service.getCharacteristic(charId);
-        Log.e(TAG," - - "+charId.toString());
+        Log.e(TAG, " - - " + charId.toString());
         if (characteristic == null) {
             throw new BLEException("Attempt to writing non-existing characteristic");
         }

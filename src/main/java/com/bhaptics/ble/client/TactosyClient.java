@@ -67,6 +67,7 @@ public class TactosyClient extends BaseClient {
      */
     private ConcurrentHashMap<String, Device> mDevices;
 
+
     // This callback is just for backward compatibility,
     // This should be deprecated.
     @Deprecated

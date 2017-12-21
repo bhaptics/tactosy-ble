@@ -3,7 +3,7 @@ apply from: 'publish.gradle'
 
 android {
     compileSdkVersion 24
-    buildToolsVersion "25.0.0"
+    buildToolsVersion '26.0.2'
 
     defaultConfig {
         minSdkVersion 18
@@ -35,4 +35,8 @@ buildscript {
 dependencies {
     //compile fileTree(include: ['*.jar'], dir: 'libs', exclude: 'classes.jar')
     testCompile 'junit:junit:4.12'
+
+    // https://mvnrepository.com/artifact/com.google.code.gson/gson
+    compile group: 'com.google.code.gson', name: 'gson', version: '2.3.1'
+
 }
