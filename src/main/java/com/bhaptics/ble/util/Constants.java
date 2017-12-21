@@ -14,6 +14,7 @@ public class Constants {
     public final static int MESSAGE_WRITE_SUCCESS =     8;
     public final static int MESSAGE_WRITE_ERROR =       9;
     public final static int MESSAGE_SET_NOTIFICATION =  10;
+    public final static int MESSAGE_WRITE_V2 =          11;
 
     public final static int MODE_DOT =  0;
     public final static int MODE_PATH = 1;

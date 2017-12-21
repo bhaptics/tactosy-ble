@@ -346,6 +346,26 @@ public class TactosyClient extends BaseClient {
         }
     }
 
+
+    public void setMotor(String values) {
+        Message msg = new Message();
+        Bundle data = new Bundle();
+
+        data.putString(Constants.KEY_SERVICE_ID, Constants.MOTOR_SERVICE.toString());
+
+        data.putString(Constants.KEY_VALUES, values);
+
+
+        msg.what = Constants.MESSAGE_WRITE_V2;//Constants.MESSAGE_WRITE;
+        msg.setData(data);
+
+        try {
+            getService().send(msg);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+    }
+
     public void setMotor(String addr, byte[] values) {
         setMotor(addr, values, Constants.MOTOR_CHAR);
     }
