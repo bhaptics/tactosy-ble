@@ -19,12 +19,12 @@ import java.util.UUID;
 public class ClientHandler extends Handler {
 
     private ArrayList<TactosyClient.ConnectCallback> mConnectCallbacks;
-    private ArrayList<TactosyClient.DataCallback> mDataCallbacks;
+    //private ArrayList<TactosyClient.DataCallback> mDataCallbacks;
 
     public ClientHandler() {
         super();
         mConnectCallbacks = new ArrayList<>();
-        mDataCallbacks = new ArrayList<>();
+      //  mDataCallbacks = new ArrayList<>();
     }
 
     private static List<Parcelable> safe(List<Parcelable> list) {
@@ -97,9 +97,9 @@ public class ClientHandler extends Handler {
 
         byte[] bytes = data.getByteArray(Constants.KEY_VALUES);
 
-        for (TactosyClient.DataCallback callback : mDataCallbacks) {
-            callback.onRead(address, uuid, bytes, status);
-        }
+//        for (TactosyClient.DataCallback callback : mDataCallbacks) {
+//            callback.onRead(address, uuid, bytes, status);
+//        }
     }
 
     private void onWrite(Message msg) {
@@ -109,9 +109,9 @@ public class ClientHandler extends Handler {
         String address = data.getString(Constants.KEY_ADDR);
         UUID uuid = UUID.fromString(data.getString(Constants.KEY_CHAR_ID));
 
-        for (TactosyClient.DataCallback callback : mDataCallbacks) {
-            callback.onWrite(address, uuid, status);
-        }
+//        for (TactosyClient.DataCallback callback : mDataCallbacks) {
+//            callback.onWrite(address, uuid, status);
+//        }
     }
 
     private void onError(Message msg) {
@@ -121,16 +121,16 @@ public class ClientHandler extends Handler {
         String address = data.getString(Constants.KEY_ADDR);
         String charId = data.getString(Constants.KEY_CHAR_ID);
 
-        for (TactosyClient.DataCallback callback : mDataCallbacks) {
-            callback.onDataError(address, charId, errCode);
-        }
+//        for (TactosyClient.DataCallback callback : mDataCallbacks) {
+//            callback.onDataError(address, charId, errCode);
+//        }
     }
 
     void addConnectCallback(TactosyClient.ConnectCallback callback) {
         mConnectCallbacks.add(callback);
     }
 
-    void addDataCallback(TactosyClient.DataCallback callback) {
-        mDataCallbacks.add(callback);
-    }
+//    void addDataCallback(TactosyClient.DataCallback callback) {
+//        mDataCallbacks.add(callback);
+//    }
 }

@@ -13,7 +13,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Message;
 import android.os.RemoteException;
-import android.util.Log;
 
 import com.bhaptics.ble.service.TactosyBLEService;
 import com.bhaptics.ble.util.Constants;
@@ -39,6 +38,9 @@ public class TactosyClient extends BaseClient {
         if (sInstance == null) {
             sInstance = new TactosyClient(context);
         }
+//        BluetoothManager bluetoothManager =
+//                (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
+        //mBluetoothAdapter = bluetoothManager.getAdapter();
 
         return sInstance;
     }
@@ -51,7 +53,7 @@ public class TactosyClient extends BaseClient {
 
     private BluetoothAdapter mBluetoothAdapter;
 
-    private ScanCallback mScanCallback;
+    //private ScanCallback mScanCallback;
 
     @Override
     protected ClientHandler getClientHandler() {
@@ -63,20 +65,20 @@ public class TactosyClient extends BaseClient {
 
     /**
      * Devices list selectable by address.
-     * This is filled when devices are scanned. (after {@link TactosyClient#scan})
+     * This is filled when devices are scanned. (after {@link TactosyClient#})
      */
     private ConcurrentHashMap<String, Device> mDevices;
 
 
     // This callback is just for backward compatibility,
     // This should be deprecated.
-    @Deprecated
-    private BluetoothAdapter.LeScanCallback mOlderScanCallback = new BluetoothAdapter.LeScanCallback() {
-        @Override
-        public void onLeScan(BluetoothDevice device, int rssi, byte[] scanRecord) {
-            onDeviceScanned(device, rssi, scanRecord);
-        }
-    };
+//    @Deprecated
+//    private BluetoothAdapter.LeScanCallback mOlderScanCallback = new BluetoothAdapter.LeScanCallback() {
+//        @Override
+//        public void onLeScan(BluetoothDevice device, int rssi, byte[] scanRecord) {
+//            onDeviceScanned(device, rssi, scanRecord);
+//        }
+//    };
 
     private android.bluetooth.le.ScanCallback mNewerScanCallback;
 
@@ -97,7 +99,7 @@ public class TactosyClient extends BaseClient {
                     ScanRecord record = result.getScanRecord();
                     byte[] scanRecord = record != null ? record.getBytes() : new byte[0];
 
-                    onDeviceScanned(device, rssi, scanRecord);
+                    //onDeviceScanned(device, rssi, scanRecord);
                 }
             };
         }
@@ -105,30 +107,30 @@ public class TactosyClient extends BaseClient {
         return mNewerScanCallback;
     }
 
-    protected void onDeviceScanned(BluetoothDevice device, int rssi, byte[] scanRecord) {
-        if (mDevices.containsKey(device.getAddress())) {
-            return;
-        }
+//    protected void onDeviceScanned(BluetoothDevice device, int rssi, byte[] scanRecord) {
+//        if (mDevices.containsKey(device.getAddress())) {
+//            return;
+//        }
+//
+//        int appearance = ScanRecordParser.getAppearance(scanRecord);
+//
+//        mDevices.put(device.getAddress(), new Device(device.getAddress(), device.getName(), Device.DeviceType.ToDeviceType( device.getName())));
+//
+//        mScanCallback.onScan(mDevices.values());
+//    }
 
-        int appearance = ScanRecordParser.getAppearance(scanRecord);
-
-        mDevices.put(device.getAddress(), new Device(device.getAddress(), device.getName(), Device.DeviceType.ToDeviceType( device.getName())));
-
-        mScanCallback.onScan(mDevices.values());
-    }
-
-    /**
-     * Interface definition for scanner callbacks.
-     * Callbacks are called only after {@link #scan()} is called.
-     */
-    public interface ScanCallback {
-        /**
-         * Called when {@link TactosyBLEService} sends a scan result.
-         *
-         * @param device Scanned results as {@link Device} object.
-         */
-        void onScan(Collection<Device> device);
-    }
+//    /**
+//     * Interface definition for scanner callbacks.
+//     * Callbacks are called only after {@link #scan()} is called.
+//     */
+//    public interface ScanCallback {
+//        /**
+//         * Called when {@link TactosyBLEService} sends a scan result.
+//         *
+//         * @param device Scanned results as {@link Device} object.
+//         */
+//        void onScan(Collection<Device> device);
+//    }
 
     /**
      * Interface definition for mConnection callbacks.
@@ -139,9 +141,10 @@ public class TactosyClient extends BaseClient {
         /**
          * Called when BLE mConnection is created successfully.
          *
-         * @param addr MAC address of connected device.
+         * @param position device position of connected device.
          */
-        void onConnect(String addr);
+        //void onConnect(String addr);
+        int onConnect(String position); // String position으로 변경될 예정
 
         /**
          * Called when BLE mConnection is disconnected.
@@ -163,33 +166,33 @@ public class TactosyClient extends BaseClient {
     /**
      * Interface definition for read/write callbacks on connected devices.
      */
-    public interface DataCallback {
-        /**
-         * Called after read request processed successfully on device.
-         *
-         * @param address MAC address of device to read data.
-         * @param charUUID Characteristic UUID to read data.
-         * @param data data read
-         * @param status
-         */
-        void onRead(String address, UUID charUUID, byte[] data, int status);
-
-        /**
-         * Called after write request processed successfully on device.
-         *
-         * @param address MAC address of device to write data.
-         * @param charUUID Characteristic UUID to write data.
-         * @param status
-         */
-        void onWrite(String address, UUID charUUID, int status);
-
-        /**
-         * Called when error occurred reading/writing data.
-         *
-         * @param errCode one of {@link Constants#MESSAGE_READ_ERROR} or {@link Constants#MESSAGE_WRITE_ERROR}
-         */
-        void onDataError(String address, String charId, int errCode);
-    }
+//    public interface DataCallback {
+//        /**
+//         * Called after read request processed successfully on device.
+//         *
+//         * @param address MAC address of device to read data.
+//         * @param charUUID Characteristic UUID to read data.
+//         * @param data data read
+//         * @param status
+//         */
+//        void onRead(String address, UUID charUUID, byte[] data, int status);
+//
+//        /**
+//         * Called after write request processed successfully on device.
+//         *
+//         * @param address MAC address of device to write data.
+//         * @param charUUID Characteristic UUID to write data.
+//         * @param status
+//         */
+//        void onWrite(String address, UUID charUUID, int status);
+//
+//        /**
+//         * Called when error occurred reading/writing data.
+//         *
+//         * @param errCode one of {@link Constants#MESSAGE_READ_ERROR} or {@link Constants#MESSAGE_WRITE_ERROR}
+//         */
+//        void onDataError(String address, String charId, int errCode);
+//    }
 
     /**
      * TactosyClient's constructor.
@@ -199,20 +202,20 @@ public class TactosyClient extends BaseClient {
         super();
         mDevices = new ConcurrentHashMap<>();
         mClientHandler = getClientHandler();
-        BluetoothManager bluetoothManager =
-                (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
-        mBluetoothAdapter = bluetoothManager.getAdapter();
+//        BluetoothManager bluetoothManager =
+//                (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
+//        mBluetoothAdapter = bluetoothManager.getAdapter();
     }
 
     @Override
     public void bindService(Context context) {
         addConnectCallback(new ConnectCallback() {
             @Override
-            public void onConnect(String addr) {
+            public void onConnect(String position) {
+                /*
                 if (mDevices.containsKey(addr)) {
                     return;
                 }
-
                 Log.e(TAG, "onConnect: " + addr);
                 Device device = new Device(addr, "", Device.DeviceType.TactosyV2);
                 device.setConnected(true);
@@ -223,6 +226,7 @@ public class TactosyClient extends BaseClient {
                 if (mScanCallback != null) {
                     mScanCallback.onScan(mDevices.values());
                 }
+                */
             }
 
             @Override
@@ -232,46 +236,46 @@ public class TactosyClient extends BaseClient {
             public void onConnectionError(String addr) {}
         });
 
-        addDataCallback(new DataCallback() {
-            @Override
-            public void onRead(String address, UUID charUUID, byte[] data, int status) {
-                if (data == null || !charUUID.equals(Constants.MOTOR_DEVICE_NAME)) {
-                    return;
-                }
-
-                Device target = mDevices.get(address);
-
-                if (target != null && target.getDeviceName().isEmpty()) {
-                    target.setDeviceName(new String(data));
-                }
-            }
-
-            @Override
-            public void onWrite(String address, UUID charUUID, int status) {}
-
-            @Override
-            public void onDataError(String address, String charId, int errCode) {}
-        });
+//        addDataCallback(new DataCallback() {
+//            @Override
+//            public void onRead(String address, UUID charUUID, byte[] data, int status) {
+//                if (data == null || !charUUID.equals(Constants.MOTOR_DEVICE_NAME)) {
+//                    return;
+//                }
+//
+//                Device target = mDevices.get(address);
+//
+//                if (target != null && target.getDeviceName().isEmpty()) {
+//                    target.setDeviceName(new String(data));
+//                }
+//            }
+//
+//            @Override
+//            public void onWrite(String address, UUID charUUID, int status) {}
+//
+//            @Override
+//            public void onDataError(String address, String charId, int errCode) {}
+//        });
 
         super.bindService(context);
     }
 
-    public void scan() {
-        for (Device device : mDevices.values()) {
-            if (!device.getConnected()) {
-                mDevices.remove(device.getAddress());
-            }
-        }
+//    public void scan() {
+//        for (Device device : mDevices.values()) {
+//            if (!device.getConnected()) {
+//                mDevices.remove(device.getAddress());
+//            }
+//        }
+//
+//        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+//            mBluetoothAdapter.startLeScan(mOlderScanCallback);
+//        } else {
+//            BluetoothLeScanner scanner = mBluetoothAdapter.getBluetoothLeScanner();
+//            scanner.startScan(getNewerScanCallback());
+//        }
+//    }
 
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-            mBluetoothAdapter.startLeScan(mOlderScanCallback);
-        } else {
-            BluetoothLeScanner scanner = mBluetoothAdapter.getBluetoothLeScanner();
-            scanner.startScan(getNewerScanCallback());
-        }
-    }
-
-    public void stopScan() {
+    /*public void stopScan() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
             mBluetoothAdapter.stopLeScan(mOlderScanCallback);
         } else {
@@ -282,7 +286,7 @@ public class TactosyClient extends BaseClient {
 
     public void setScanCallback(ScanCallback callback) {
         mScanCallback = callback;
-    }
+    }*/
 
     public List<Device> getConnectedDevices() {
         List<Device> result = new ArrayList<>();
@@ -504,7 +508,7 @@ public class TactosyClient extends BaseClient {
         mClientHandler.addConnectCallback(callback);
     }
 
-    public void addDataCallback(DataCallback callback) {
+    /*public void addDataCallback(DataCallback callback) {
         mClientHandler.addDataCallback(callback);
-    }
+    }*/
 }
