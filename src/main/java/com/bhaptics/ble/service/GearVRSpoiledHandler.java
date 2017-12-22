@@ -25,7 +25,7 @@ public class GearVRSpoiledHandler extends ServiceHandler {
         switch (msg.what) {
             case Constants.MESSAGE_REPLY:
                 for (String addr : mReservedAddrs) {
-                    connect(addr);
+//                    connect(addr);
                 }
                 break;
             default:
