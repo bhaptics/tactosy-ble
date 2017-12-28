@@ -15,11 +15,6 @@ import com.bhaptics.ble.util.LogUtils;
 import com.bhaptics.ble.util.ReadyQueue;
 
 /**
- * Client to communicate with {@link com.bhaptics.ble.service.BaseBLEService}</br>
- * </br>
- * This client binds to {@link com.bhaptics.ble.service.BaseBLEService}
- * and exchange their {@link Messenger}</br>
- * </br>
  * {@link ClientHandler} should be specified to receive tactosies' callbacks (through service).</br>
  * </br>
  * If more callbacks (after binding to service) is needed,
@@ -79,7 +74,7 @@ public abstract class BaseClient {
 
     public void bindService(Context context) {
         Intent intent = new Intent();
-        intent.setComponent(new ComponentName("com.bhaptics.player", "com.bhaptics.ble.service.TactosyBLEService"));
+        intent.setComponent(new ComponentName("com.bhaptics.player", "com.bhaptics.player.service.HapticPlayerService"));
         context.bindService(intent, mConnection, 0);
     }
 
