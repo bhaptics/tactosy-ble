@@ -17,7 +17,7 @@ In case of other devices, you should know their own characteristic.
 * gradle
 
 ```groovy
-compile 'com.bhaptics.tactosy:ble:0.9.4'
+compile 'com.bhaptics.tactosy:ble:0.10.1'
 ```
 
 * or maven
@@ -26,11 +26,47 @@ compile 'com.bhaptics.tactosy:ble:0.9.4'
 <dependency>
   <groupId>com.bhaptics.tactosy</groupId>
   <artifactId>ble</artifactId>
-  <version>0.9.4</version>
+  <version>0.10.1</version>
   <type>pom</type>
 </dependency>
 ```
 
-# Documentation
+# How to use
 
-* Class references in docs/
+```
+public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+
+    Button on, off;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        HapticPlayer.getInstance(this).bindService(this);
+        on = findViewById(R.id.button_on);
+        off = findViewById(R.id.button_off);
+
+        on.setOnClickListener(this);
+        off.setOnClickListener(this);
+
+
+    }
+
+    @Override
+    public void onClick(View view) {
+        Button button = (Button) view;
+        HapticPlayer player = HapticPlayer.getInstance(getApplicationContext());
+        if ("On".equals(button.getText())) {
+            List<Feedback> feedbacks = new ArrayList<>();
+            Feedback feedback = new Feedback();
+            feedback.mPosition = "Left";
+            feedback.mValues = new byte[20];
+            feedback.mValues[5] = 100;
+            feedbacks.add(feedback);
+            player.submit(feedbacks);
+        } else {
+            player.turnOff();
+        }
+    }
+}
+```
